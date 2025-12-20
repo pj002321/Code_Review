@@ -6,6 +6,7 @@ using UnityEngine.Audio;
 
 namespace chaos
 {
+    /// <summary> 오디오 카테고리 </summary>
     public enum AudioCategory
     {
         BGM,       
@@ -13,6 +14,7 @@ namespace chaos
         UI,         
     }
 
+    /// <summary> 오디오 클립 데이터 </summary>
     [System.Serializable]
     public class AudioClipData
     {
@@ -26,6 +28,7 @@ namespace chaos
         public float spatialBlend = 0f; // 0 = 2D, 1 = 3D
     }
 
+    /// <summary> 오디오 매니저 </summary>
     public class AudioManager : MonoBehaviourSingleton<AudioManager>
     {
         [Header("Audio Settings")]
@@ -64,7 +67,7 @@ namespace chaos
             LoadVolumeSettings();
         }
 
-        /// <summary>
+        /// <summary> 오디오 시스템 초기화 </summary>
         private void InitializeAudioSystem()
         {
 
@@ -76,6 +79,7 @@ namespace chaos
             
         }
 
+        /// <summary> BGM 오디오 소스 생성 </summary>
         private void CreateBGMAudioSource()
         {
             GameObject bgmObject = new GameObject("BGM_AudioSource");
@@ -86,6 +90,7 @@ namespace chaos
             bgmAudioSource.playOnAwake = false;
         }
 
+        /// <summary> 오디오 소스 풀 생성 </summary>
         private void CreateAudioSourcePool()
         {
             for (int i = 0; i < initialPoolSize; i++)
@@ -94,6 +99,7 @@ namespace chaos
             }
         }
 
+        /// <summary> 새로운 오디오 소스 생성 </summary>
         private AudioSource CreateNewAudioSource()
         {
 
@@ -106,6 +112,7 @@ namespace chaos
             return audioSource;
         }
 
+        /// <summary> 클립 데이터베이스 빌드 </summary>
         private void BuildClipDatabase()
         {
             clipDatabase.Clear();
@@ -120,6 +127,7 @@ namespace chaos
         }
 
 
+        /// <summary> 볼륨 설정 로드 </summary>
         private void LoadVolumeSettings()
         {
             masterVolume = PlayerPrefs.GetFloat("Master", 1f);
@@ -131,6 +139,7 @@ namespace chaos
         }
 
 
+        /// <summary> 볼륨 설정 적용 </summary>
         private void ApplyVolumeSettings()
         {
             if (audioMixer != null)
@@ -156,11 +165,13 @@ namespace chaos
 
         #region Public Method
 
+        /// <summary> 오디오 재생 </summary>
         public AudioSource PlaySound(string clipName, float volumeScale = 1f)
         {
             return PlaySound(clipName, Vector3.zero, volumeScale, false);
         }
 
+        /// <summary> 3D 구분 오디오 재생 </summary>
         public AudioSource PlaySound(string clipName, Vector3 position, float volumeScale = 1f, bool is3D = false)
         {
             if (string.IsNullOrEmpty(clipName))
@@ -194,6 +205,7 @@ namespace chaos
         }
 
         
+        /// <summary> BGM 재생 </summary>
         public void PlayBGM(string clipName, float fadeInDuration = 1f)
         {
             if (!clipDatabase.TryGetValue(clipName.ToLower(), out AudioClipData clipData))
@@ -223,6 +235,7 @@ namespace chaos
             }
         }
 
+        /// <summary> BGM 중지 </summary>
         public void StopBGM(float fadeOutDuration = 1f)
         {
             if (bgmAudioSource.isPlaying)
@@ -232,10 +245,7 @@ namespace chaos
             currentBGM = "";
         }
 
-        /// <summary>
-        /// 이전 BGM으로 복원합니다. 스택이 비어있으면 BGM을 중지합니다.
-        /// </summary>
-        /// <param name="fadeInDuration">페이드인 시간</param>
+        /// <summary> 이전 BGM으로 복원 </summary>
         public void RestorePreviousBGM(float fadeInDuration = 1f)
         {
             if (bgmStack.Count > 0)
@@ -250,23 +260,19 @@ namespace chaos
             }
         }
 
-        /// <summary>
-        /// 현재 재생 중인 BGM의 이름을 반환합니다.
-        /// </summary>
-        /// <returns>현재 BGM 클립 이름</returns>
+        /// <summary> 현재 재생 중인 BGM의 이름을 반환 </summary>
         public string GetCurrentBGM()
         {
             return currentBGM;
         }
 
-        /// <summary>
-        /// BGM 스택을 초기화합니다.
-        /// </summary>
+        /// <summary> BGM 스택을 초기화 </summary>
         public void ClearBGMStack()
         {
             bgmStack.Clear();
         }
 
+        /// <summary> 모든 SFX 중지 </summary>
         public void StopAllSFX()
         {
             foreach (var audioSource in activeAudioSources)
@@ -280,6 +286,7 @@ namespace chaos
             activeAudioSources.Clear();
         }
 
+        /// <summary> 카테고리 볼륨 설정 </summary>
         public void SetCategoryVolume(AudioCategory category, float volume)
         {
             volume = Mathf.Clamp01(volume);
@@ -307,6 +314,7 @@ namespace chaos
             ApplyVolumeSettings(); // AudioMixer를 통해 볼륨 적용
         }
 
+        /// <summary> 마스터 볼륨 설정 </summary>
         public void SetMasterVolume(float volume)
         {
             masterVolume = Mathf.Clamp01(volume);
@@ -315,6 +323,7 @@ namespace chaos
             ApplyVolumeSettings();
         }
 
+        /// <summary> 오디오 리스너 토글 </summary>
         public void ToggleAudioListener()
         {
             AudioListener.pause = !AudioListener.pause;
@@ -324,6 +333,7 @@ namespace chaos
 
         #region Private Method
 
+        /// <summary> 오디오 소스 풀에서 오디오 소스 가져오기 </summary>
         private AudioSource GetPooledAudioSource()
         {
             AudioSource audioSource = null;
@@ -350,6 +360,7 @@ namespace chaos
             return audioSource;
         }
 
+        /// <summary> 오디오 소스 설정 </summary>
         private void ConfigureAudioSource(AudioSource audioSource, AudioClipData clipData, float volumeScale, bool force3D)
         {
             audioSource.clip = clipData.clip;
@@ -366,7 +377,6 @@ namespace chaos
             
             audioSource.outputAudioMixerGroup = GetMixerGroup(clipData.category);
         }
-
         private float GetCategoryVolume(AudioCategory category)
         {
             return category switch
@@ -389,6 +399,7 @@ namespace chaos
             };
         }
 
+        /// <summary> 오디오 소스 풀로 반환 </summary>
         private void ReturnToPool(AudioSource audioSource)
         {
             if (audioSource != null)
@@ -405,12 +416,14 @@ namespace chaos
 
         #region Coroutine
 
+        /// <summary> 오디오 소스 풀 반환  </summary>
         private IEnumerator ReturnToPoolWhenFinished(AudioSource audioSource, float clipLength)
         {
             yield return new WaitForSeconds(clipLength + 0.1f);
             ReturnToPool(audioSource);
         }
 
+        /// <summary> 페이드인/아웃 </summary>
         private IEnumerator FadeIn(AudioSource audioSource, float targetVolume, float duration)
         {
             float currentTime = 0f;
@@ -442,6 +455,7 @@ namespace chaos
             audioSource.volume = startVolume;
         }
 
+        /// <summary> BGM 크로스페이드 </summary>
         private IEnumerator CrossfadeBGM(AudioClipData newClipData, float duration)
         {
             float startVolume = bgmAudioSource.volume;
@@ -455,7 +469,6 @@ namespace chaos
         }
 
         #endregion
-
         protected override void OnDestroy()
         {
             base.OnDestroy();
