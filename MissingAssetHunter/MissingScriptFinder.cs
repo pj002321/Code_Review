@@ -132,23 +132,71 @@ namespace Kirist.EditorTool
             /// <param name="locationPath">위치 경로</param>
             private void CheckGameObjectForMissingScripts(GameObject obj, string locationName, string locationPath)
             {
-                // 1. GameObject의 모든 컴포넌트를 가져옴
+                // 1. GameObject의 모든 컴포넌트를 가져옴 (직렬화 특성 활용)
                 Component[] components = obj.GetComponents<Component>();
                 
                 // 2. 각 컴포넌트를 검사
                 for (int i = 0; i < components.Length; i++)
                 {
-                    // 3. 컴포넌트가 null이면 Missing Script!
+                    // 3. 컴포넌트 슬롯은 존재하지만 실제 할당된 객체가 null인 상태를 감지 (Fake Null)
                     if (components[i] == null)
                     {
-                        AddMissingScriptInfo(obj, i, locationName, locationPath);
+                        // 4. 프리팹 인스턴스인 경우 원본과의 연결 관계 추적
+                        if (PrefabUtility.IsPartOfPrefabInstance(obj))
+                        {
+                            ValidatePrefabInstanceScriptConnection(obj, i, locationName, locationPath);
+                        }
+                        else
+                        {
+                            AddMissingScriptInfo(obj, i, locationName, locationPath);
+                        }
                     }
                 }
                 
-                // 4. 자식 GameObject들도 재귀적으로 검사
+                // 5. 자식 GameObject들도 재귀적으로 검사
                 foreach (Transform child in obj.transform)
                 {
                     CheckGameObjectForMissingScripts(child.gameObject, locationName, locationPath);
+                }
+            }
+            
+            /// <summary>
+            /// 프리팹 인스턴스의 스크립트 연결 관계를 검증합니다
+            /// 원본은 정상이더라도 씬 데이터 오버라이드 과정에서 깨진 케이스까지 검증
+            /// </summary>
+            private void ValidatePrefabInstanceScriptConnection(GameObject instanceObj, int componentIndex, string locationName, string locationPath)
+            {
+                // 원본 프리팹 에셋 가져오기
+                GameObject prefabAsset = PrefabUtility.GetCorrespondingObjectFromSource(instanceObj);
+                
+                if (prefabAsset == null)
+                {
+                    // 원본 프리팹 연결이 끊어진 경우
+                    AddMissingScriptInfo(obj: instanceObj, componentIndex: componentIndex, locationName: locationName, locationPath: locationPath);
+                    return;
+                }
+                
+                // 원본 프리팹의 컴포넌트 확인
+                Component[] prefabComponents = prefabAsset.GetComponents<Component>();
+                
+                if (componentIndex < prefabComponents.Length)
+                {
+                    // 원본 프리팹에 해당 인덱스의 컴포넌트가 있는 경우
+                    if (prefabComponents[componentIndex] != null)
+                    {
+                        // 원본은 정상이지만 씬 인스턴스에서 오버라이드로 인해 깨진 케이스
+                        AddMissingScriptInfo(obj: instanceObj, componentIndex: componentIndex, locationName: locationName, locationPath: locationPath);
+                    }
+                    else
+                    {
+                        // 원본 프리팹에도 Missing Script가 있는 경우
+                        AddMissingScriptInfo(obj: instanceObj, componentIndex: componentIndex, locationName: locationName, locationPath: locationPath);
+                    }
+                }
+                else
+                {
+                    // 씬 인스턴스에만 추가된 컴포넌트가 Missing인 경우
+                    AddMissingScriptInfo(obj: instanceObj, componentIndex: componentIndex, locationName: locationName, locationPath: locationPath);
                 }
             }
             

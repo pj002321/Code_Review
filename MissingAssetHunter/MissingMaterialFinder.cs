@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
 using UnityEngine.SceneManagement;
 using UnityEditor.SceneManagement;
 
@@ -247,6 +249,34 @@ namespace Kirist.EditorTool
                     return true;
                 }
                 
+                // 5. Custom 셰이더의 경우 더 깊은 단계의 검증 수행
+                if (!IsUnityBuiltinShader(shaderName))
+                {
+                    // passCount를 통한 컴파일 실패 여부 1차 확인
+                    if (shader.passCount == 0)
+                    {
+                        return true;
+                    }
+                    
+                    // 셰이더 소스 코드를 정규표현식으로 파싱하여 구조적 결함 검증
+                    string shaderPath = AssetDatabase.GetAssetPath(shader);
+                    if (!string.IsNullOrEmpty(shaderPath) && File.Exists(shaderPath))
+                    {
+                        try
+                        {
+                            string shaderContent = File.ReadAllText(shaderPath);
+                            if (HasShaderFunctionMismatch(shaderContent) || HasBasicShaderSyntaxErrors(shaderContent))
+                            {
+                                return true;
+                            }
+                        }
+                        catch
+                        {
+                            // 파일 읽기 실패 시 무시
+                        }
+                    }
+                }
+                
                 return false;
             }
             
@@ -287,6 +317,120 @@ namespace Kirist.EditorTool
             }
             
             /// <summary>
+            /// Unity 내장 셰이더인지 확인합니다
+            /// </summary>
+            private bool IsUnityBuiltinShader(string shaderName)
+            {
+                if (string.IsNullOrEmpty(shaderName)) return false;
+
+                return shaderName.StartsWith("Universal Render Pipeline/") ||
+                       shaderName.StartsWith("HDRP/") ||
+                       shaderName.StartsWith("Built-in/") ||
+                       shaderName.StartsWith("Legacy Shaders/") ||
+                       shaderName.StartsWith("Sprites/") ||
+                       shaderName.StartsWith("UI/") ||
+                       shaderName.StartsWith("Standard") ||
+                       shaderName.StartsWith("Mobile/") ||
+                       shaderName.StartsWith("Particles/") ||
+                       shaderName.StartsWith("Skybox/") ||
+                       shaderName.StartsWith("Terrain/") ||
+                       shaderName.StartsWith("Nature/") ||
+                       shaderName.StartsWith("GUI/") ||
+                       shaderName.StartsWith("Hidden/");
+            }
+            
+            /// <summary>
+            /// #pragma 선언 함수와 실제 구현부의 불일치를 검증합니다
+            /// </summary>
+            private bool HasShaderFunctionMismatch(string shaderContent)
+            {
+                try
+                {
+                    var vertexMatch = Regex.Match(shaderContent, @"#pragma\s+vertex\s+(\w+)");
+                    if (vertexMatch.Success)
+                    {
+                        string declaredVertexFunction = vertexMatch.Groups[1].Value;
+                        
+                        var vertexFunctionMatch = Regex.Match(shaderContent, @"(\w+)\s+vert\s*\(");
+                        if (vertexFunctionMatch.Success)
+                        {
+                            string actualVertexFunction = vertexFunctionMatch.Groups[1].Value;
+                            
+                            if (declaredVertexFunction != actualVertexFunction)
+                            {
+                                return true;
+                            }
+                        }
+                        else
+                        {
+                            return true;
+                        }
+                    }
+                    
+                    var fragmentMatch = Regex.Match(shaderContent, @"#pragma\s+fragment\s+(\w+)");
+                    if (fragmentMatch.Success)
+                    {
+                        string declaredFragmentFunction = fragmentMatch.Groups[1].Value;
+                        
+                        var fragmentFunctionMatch = Regex.Match(shaderContent, @"(\w+)\s+frag\s*\(");
+                        if (fragmentFunctionMatch.Success)
+                        {
+                            string actualFragmentFunction = fragmentFunctionMatch.Groups[1].Value;
+                            
+                            if (declaredFragmentFunction != actualFragmentFunction)
+                            {
+                                return true;
+                            }
+                        }
+                        else
+                        {
+                            return true;
+                        }
+                    }
+                    
+                    return false;
+                }
+                catch
+                {
+                    return true;
+                }
+            }
+            
+            /// <summary>
+            /// 셰이더의 기본 구조적 결함을 검증합니다 (CGPROGRAM/ENDCG, Pass 블록 등)
+            /// </summary>
+            private bool HasBasicShaderSyntaxErrors(string shaderContent)
+            {
+                try
+                {
+                    int cgProgramCount = Regex.Matches(shaderContent, @"CGPROGRAM").Count;
+                    int endCgCount = Regex.Matches(shaderContent, @"ENDCG").Count;
+                    
+                    if (cgProgramCount != endCgCount)
+                    {
+                        return true;
+                    }
+                    
+                    int passCount = Regex.Matches(shaderContent, @"Pass\s*\{").Count;
+                    if (passCount == 0)
+                    {
+                        return true;
+                    }
+                    
+                    if (!shaderContent.Contains("Shader") || !shaderContent.Contains("SubShader"))
+                    {
+                        return true;
+                    }
+                    
+                    return false;
+                }
+                catch
+                {
+                    return true;
+                }
+            }
+            
+            /// <summary>
             /// Shader 오류 원인을 문자열로 반환합니다
             /// </summary>
             private string GetShaderErrorReason(Material material)
@@ -308,6 +452,9 @@ namespace Kirist.EditorTool
                 
                 if (IsRenderPipelineMismatch(shader, shaderName))
                     return "Render Pipeline Mismatch";
+                
+                if (!IsUnityBuiltinShader(shaderName) && shader.passCount == 0)
+                    return "Shader Compilation Failed (No Passes)";
                 
                 return "Shader Error";
             }
