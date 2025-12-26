@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 namespace penta
 {
-    public class RewardUI : MonoBehaviourSingleton<RewardUI>, IDestroyOnThisScene
+    public class RewardUI : MonoBehaviourSingleton<RewardUI>
     {
         private int levelAmount = 0;
         private int expAmount = 0;
@@ -20,6 +20,14 @@ namespace penta
         [SerializeField] private Animator coinanicon;
         [SerializeField] private Animator levelanicon;
 
+        protected override void Awake()
+        {
+            base.Awake();
+        }
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+        }
         public void Start()
         {
             levelAmount = PlayerReward.Shared?.Level ?? 0;
