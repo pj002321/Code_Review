@@ -1,6 +1,4 @@
-using UnityEngine;
-
-namespace chaos
+namespace penta
 {
     /// <summary>
     /// 오디오 재생을 위한 정적 헬퍼 클래스

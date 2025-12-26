@@ -1,17 +1,4 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
-using PentaShield;
-using TMPro;
-using UnityEngine;
-using UnityEngine.UI;
-
-#if UNITY_EDITOR
-using Sirenix.OdinInspector;
-#endif
-
-namespace chaos
+namespace penta
 {
     /// <summary>
     /// 라운드 기반 게임 시스템 관리

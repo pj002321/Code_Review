@@ -1,9 +1,9 @@
-using chaos;
+using penta;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 
-namespace chaos
+namespace penta
 {
 
     [RequireComponent(typeof(CharacterController))]

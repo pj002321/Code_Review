@@ -1,16 +1,14 @@
-using PentaShield;
+using penta;
 using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace chaos
+namespace penta
 {
     public partial class MainMenuScreen
     {
-
-        #region Serialized Fields
         [Header("BUTTON TRIGGER")]
         [SerializeField] private List<Button> startButton = new List<Button>();
         [SerializeField] private List<Button> optionsButton = new List<Button>();
@@ -32,15 +30,12 @@ namespace chaos
 
         [Header("ENV")]
         [SerializeField] private GameObject Env;
-        #endregion
 
-        #region Private Fields
         private ShopItemConfirmUI shopConfirmUI;
         private SellableItemInfo selectedItemInfo;
         private Button selectedButton;
-        #endregion
 
-        #region Button Setup
+        /// <summary> 버튼 사운드 설정 </summary>
         private void HandleButtonSfx()
         {
             SetupButtonList(startButton, AudioConst.BUTTON_CLICK, () => SetEnvActive(false));
@@ -73,21 +68,9 @@ namespace chaos
         {
             button.onClick.AddListener(() =>
             {
-                PlayUISound(audioConst);
+                AudioHelper.PlayUI(audioConst);
                 onClickAction?.Invoke();
             });
-        }
-
-        private void PlayUISound(string audioConst)
-        {
-            try
-            {
-                AudioHelper.PlayUI(audioConst);
-            }
-            catch (Exception e)
-            {
-                $"[MainMenuScreen] Audio play error: {e.Message}".DError();
-            }
         }
 
         private void SetEnvActive(bool active)
@@ -97,15 +80,11 @@ namespace chaos
                 Env.SetActive(active);
             }
         }
-        #endregion
 
-        #region Volume Settings
+        /// <summary> 볼륨 설정 처리 </summary>
         private void HandleVolumeSettings()
         {
-            if (AudioManager.Shared == null)
-            {
-                return;
-            }
+            if (AudioManager.Shared == null) return;
 
             SetupBGMVolume();
             SetupSFXVolume();
@@ -113,10 +92,7 @@ namespace chaos
 
         private void SetupBGMVolume()
         {
-            if (bgmSlider == null)
-            {
-                return;
-            }
+            if (bgmSlider == null) return;
 
             bgmSlider.onValueChanged.RemoveAllListeners();
             bgmSlider.onValueChanged.AddListener(OnBGMVolumeChanged);
@@ -128,10 +104,7 @@ namespace chaos
 
         private void SetupSFXVolume()
         {
-            if (effectSlider == null)
-            {
-                return;
-            }
+            if (effectSlider == null) return;
 
             effectSlider.onValueChanged.RemoveAllListeners();
             effectSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
@@ -156,9 +129,8 @@ namespace chaos
                 AudioManager.Shared.SetCategoryVolume(AudioCategory.SFX, value);
             }
         }
-        #endregion
 
-        #region Shop
+        /// <summary> 상점 구매 동작 설정 </summary>
         private void HandleSellBehaviour()
         {
             SetupPurchaseButtons();
@@ -170,17 +142,10 @@ namespace chaos
             for (int i = 0; i < purchaseButton.Count; i++)
             {
                 Button button = purchaseButton[i];
-                if (button == null)
-                {
-                    continue;
-                }
+                if (button == null) continue;
 
                 SellableItemInfo itemInfo = button.GetComponent<SellableItemInfo>();
-                if (itemInfo == null)
-                {
-                    $"[MainMenuScreen] purchaseButton[{i}]에 SellableItemInfo 컴포넌트가 없습니다!".DError();
-                    continue;
-                }
+                if (itemInfo == null) continue;
 
                 Button currentButton = button;
                 SellableItemInfo currentItemInfo = itemInfo;
@@ -190,10 +155,7 @@ namespace chaos
 
         private void SetupPurchaseConfirmPanel()
         {
-            if (purchaseConfirmPanel == null)
-            {
-                return;
-            }
+            if (purchaseConfirmPanel == null) return;
 
             shopConfirmUI = purchaseConfirmPanel.GetComponent<ShopItemConfirmUI>();
             if (shopConfirmUI != null)
@@ -204,58 +166,32 @@ namespace chaos
             purchaseConfirmPanel.SetActive(false);
         }
 
+        /// <summary> 아이템 버튼 클릭 처리 </summary>
         private void OnItemButtonClicked(Button button, SellableItemInfo itemInfo)
         {
-            if (!itemInfo.CanPurchase())
-            {
-                LogPurchaseError(itemInfo);
-                return;
-            }
+            if (!itemInfo.CanPurchase()) return;
 
             selectedItemInfo = itemInfo;
             selectedButton = button;
-
-            LogItemSelected(itemInfo);
             ShowPurchaseConfirmPanel();
         }
 
-        private void LogPurchaseError(SellableItemInfo itemInfo)
-        {
-            $"[MainMenuScreen] '{itemInfo.itemType}' 아이템을 구매할 수 없습니다. (엘리비용: {itemInfo.GetEliCost()}, 스톤비용: {itemInfo.GetStoneCost()})".DError();
-        }
-
-        private void LogItemSelected(SellableItemInfo itemInfo)
-        {
-            $"[MainMenuScreen] 아이템 선택됨: {itemInfo.itemType} (ID: {itemInfo.itemId}, 구매개수: {itemInfo.GetPurchaseCount()}개, 엘리비용: {itemInfo.GetEliCost()}, 스톤비용: {itemInfo.GetStoneCost()})".DWarning();
-        }
-
+        /// <summary> 구매 확인 처리 </summary>
         private void OnPurchaseConfirm()
         {
-            if (selectedItemInfo == null)
-            {
-                return;
-            }
+            if (selectedItemInfo == null) return;
 
-            int purchaseCount = shopConfirmUI != null 
-                ? shopConfirmUI.LastPurchaseCount 
+            int purchaseCount = shopConfirmUI != null
+                ? shopConfirmUI.LastPurchaseCount
                 : selectedItemInfo.GetPurchaseCount();
 
             ProcessItemPurchase(selectedItemInfo, purchaseCount);
             ClosePurchaseConfirmPanel();
         }
 
-        private void OnPurchaseCancel()
-        {
-            "[MainMenuScreen] 아이템 구매 취소".DLog();
-            ClosePurchaseConfirmPanel();
-        }
-
         private void ShowPurchaseConfirmPanel()
         {
-            if (purchaseConfirmPanel == null || selectedItemInfo == null)
-            {
-                return;
-            }
+            if (purchaseConfirmPanel == null || selectedItemInfo == null) return;
 
             shopConfirmUI ??= purchaseConfirmPanel.GetComponent<ShopItemConfirmUI>();
             shopConfirmUI?.SyncWithItem(selectedItemInfo);
@@ -273,16 +209,13 @@ namespace chaos
             selectedButton = null;
         }
 
+        /// <summary> 아이템 구매 처리 </summary>
         private void ProcessItemPurchase(SellableItemInfo itemInfo, int purchaseCount)
         {
             ItemData itemData = UserDataManager.Shared.ItemData;
             itemData.AddItem(itemInfo.itemType, purchaseCount);
-
-            $"[MainMenuScreen] 아이템 '{itemInfo.itemType}' {purchaseCount}개 구매 완료 (엘리비용: {itemInfo.GetEliCost()}, 스톤비용: {itemInfo.GetStoneCost()})".DLog();
         }
-        #endregion
 
-        #region Currency UI
         private void SetEliText()
         {
             SetCurrencyText(eliText, GetEliValue());
@@ -307,8 +240,6 @@ namespace chaos
             {
                 return UserDataManager.Shared.Data.Eli;
             }
-
-            "[MainMenuScreen] UserDataManager or UserData is null. Cannot get eli value.".DWarning();
             return 0;
         }
 
@@ -318,20 +249,14 @@ namespace chaos
             {
                 return UserDataManager.Shared.Data.Stone;
             }
-
-            "[MainMenuScreen] UserDataManager or UserData is null. Cannot get stone value.".DWarning();
             return 0;
         }
-        #endregion
 
-        #region Panel Management
+        /// <summary> 패널 상태 관리 </summary>
         private void ActiveStatePannels()
         {
             int activeIndex = FindActivePanelIndex();
-            if (activeIndex == -1)
-            {
-                return;
-            }
+            if (activeIndex == -1) return;
 
             DeactivateOtherPanels(activeIndex);
         }
@@ -358,8 +283,5 @@ namespace chaos
                 }
             }
         }
-        #endregion
     }
 }
-
-

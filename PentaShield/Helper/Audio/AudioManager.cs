@@ -1,10 +1,4 @@
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.Audio;
-
-namespace chaos
+namespace penta
 {
     /// <summary> 오디오 카테고리 </summary>
     public enum AudioCategory

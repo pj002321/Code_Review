@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -10,7 +8,7 @@ using UnityEngine.Networking;
 namespace penta
 {
     #region Data Models
-    
+
     [Serializable]
     public class FirebaseStorageItem
     {
@@ -35,10 +33,14 @@ namespace penta
         public List<FirebaseStorageItem> items;
         public string nextPageToken;
     }
-    
+
     #endregion
 
-    /// <summary> Firebase Storage API 클라이언트 </summary>
+    /// <summary>
+    /// Firebase Storage API 클라이언트 (주요 로직)
+    /// - 파일 목록 조회
+    /// - 파일 다운로드
+    /// </summary>
     public class FirebaseStorageClient
     {
         private const int REQUEST_DELAY_MS = 50;
@@ -92,26 +94,16 @@ namespace penta
         {
             string downloadUrl = config.BuildDownloadUrl(fileItem.name);
 
-#if UNITY_ANDROID && !UNITY_EDITOR
-            Debug.Log($"[Android] 다운로드 시작: {fileItem.name}");
-#endif
-
             using (UnityWebRequest request = UnityWebRequest.Get(downloadUrl))
             {
                 await DownloadWithProgress(request, fileItem.name);
 
                 if (request.result == UnityWebRequest.Result.Success)
                 {
-#if UNITY_ANDROID && !UNITY_EDITOR
-                    Debug.Log($"[Android] 다운로드 완료: {fileItem.name}, 크기: {request.downloadHandler.data.Length} bytes");
-#endif
                     return request.downloadHandler.data;
                 }
                 else
                 {
-#if UNITY_ANDROID && !UNITY_EDITOR
-                    Debug.LogError($"[Android] 다운로드 실패: {fileItem.name}, 에러: {request.error}");
-#endif
                     throw new Exception($"다운로드 실패: {request.error}");
                 }
             }
@@ -125,10 +117,10 @@ namespace penta
             using (UnityWebRequest request = UnityWebRequest.Head(downloadUrl))
             {
                 var operation = request.SendWebRequest();
-                
+
                 while (!operation.isDone)
                 {
-                    await Task.Delay(REQUEST_DELAY_MS);
+                    await UniTask.Delay(REQUEST_DELAY_MS);
                 }
 
                 if (request.result == UnityWebRequest.Result.Success)
@@ -159,7 +151,7 @@ namespace penta
                     lastProgress = currentProgress;
                 }
 
-                await Task.Delay(REQUEST_DELAY_MS);
+                await UniTask.Delay(REQUEST_DELAY_MS);
             }
         }
 
@@ -179,4 +171,3 @@ namespace penta
         }
     }
 }
-

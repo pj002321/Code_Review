@@ -1,13 +1,9 @@
 using Cysharp.Threading.Tasks;
-using TMPro;
-using UnityEngine;
-using chaos;
-using UnityEngine.UI;
 
-namespace PentaShield
+namespace penta
 {
     /// <summary>
-    /// 인증 정보 UI 관리
+    /// 인증 정보 UI 관리 (주요 로직)
     /// - 사용자 ID/이름 표시
     /// - 국가 이미지 표시
     /// - UserData 변경 시 자동 업데이트

@@ -1,12 +1,4 @@
-using chaos;
-using Cysharp.Threading.Tasks;
-using System.Collections;
-using System.Collections.Generic;
-using TMPro;
-using UnityEngine;
-using UnityEngine.UI;
-
-namespace PentaShield
+namespace penta
 {
     public class InGameResultWindowUI : MonoBehaviour
     {

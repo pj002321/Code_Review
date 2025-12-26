@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-namespace chaos
+namespace penta
 {
     /// <summary>
     /// 플레이어 무기 및 공격 시스템 관리

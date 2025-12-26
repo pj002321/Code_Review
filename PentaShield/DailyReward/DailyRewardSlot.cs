@@ -1,10 +1,6 @@
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
-using PentaShield;
 using Cysharp.Threading.Tasks;
 
-namespace chaos
+namespace penta
 {
     /// <summary>
     /// 출석 보상 슬롯 UI

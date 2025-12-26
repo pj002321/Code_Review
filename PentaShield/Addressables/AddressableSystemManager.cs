@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.ResourceLocations;
 
-namespace PentaShield
+namespace penta
 {
     /// <summary> Addressable 시스템 초기화 및 갱신 관리 </summary>
     public class AddressableSystemManager

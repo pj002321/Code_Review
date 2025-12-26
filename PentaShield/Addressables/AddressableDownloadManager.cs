@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace PentaShield
+namespace penta
 {
     /// <summary> Addressable 에셋 다운로드 매니저 </summary>       
     public class AddressableDownloadManager

@@ -1,13 +1,10 @@
-using chaos;
 using Cysharp.Threading.Tasks;
 using Firebase.Auth;
-using UnityEngine;
-using UnityEngine.UI;
 
-namespace PentaShield
+namespace penta
 {
     /// <summary>
-    /// 로그인 UI 관리
+    /// 로그인 UI 관리 (주요 로직)
     /// - Google/Apple 로그인 처리
     /// - 로그아웃 처리
     /// - 계정 삭제 처리

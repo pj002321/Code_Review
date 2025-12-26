@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using chaos;
+using penta;
 
 /// <summary>
 /// 발사체 시스템 (주요 로직)

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public enum EnemyTarget { Player, Guard }
 
-namespace chaos
+namespace penta
 {
     /// <summary>
     /// 적 AI 베이스 클래스 (주요 로직)

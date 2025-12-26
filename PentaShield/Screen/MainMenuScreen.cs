@@ -1,39 +1,32 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace chaos
+namespace penta
 {
+    /// <summary>
+    /// 메인 메뉴 화면 관리
+    /// - 버튼 동작 설정
+    /// - 상점 구매 처리
+    /// - 화폐 UI 업데이트
+    /// - 패널 관리
+    /// </summary>
     public partial class MainMenuScreen : MonoBehaviour
     {
-        #region Constants
-        private const float BGM_DELAY = 0.1f;
         private const float SOUND_SETTINGS_DELAY = 0.1f;
         private const float DEFAULT_VOLUME = 1f;
         private const string BGM_PREF_KEY = "BGM";
         private const string SFX_PREF_KEY = "SFX";
-        #endregion
 
-        #region Unity Lifecycle
-        private void Start()
+        private void Awake()
         {
             HandleButtonSfx();
             HandleSellBehaviour();
             HandleSoundSettingsAsync().Forget();
         }
 
-        public void Update()
+        private void Update()
         {
             ActiveStatePannels();
-        }
-
-        private void OnEnable()
-        {
-            if (ShouldPlayBGM())
-            {
-                PlayBGMAsync().Forget();
-            }
-
-            UpdateCurrencyTexts();
         }
 
         private void OnDestroy()
@@ -43,20 +36,6 @@ namespace chaos
                 shopConfirmUI.onPurchaseSuccess -= OnPurchaseConfirm;
             }
         }
-        #endregion
-
-        #region Audio
-        private bool ShouldPlayBGM()
-        {
-            return gameObject.activeInHierarchy && 
-                   AudioHelper.GetCurrentBGM() != AudioConst.MAIN_MENU_BGM;
-        }
-
-        private async UniTaskVoid PlayBGMAsync()
-        {
-            await UniTask.Delay(System.TimeSpan.FromSeconds(BGM_DELAY));
-            AudioHelper.PlayBGM(AudioConst.MAIN_MENU_BGM, DEFAULT_VOLUME);
-        }
 
         private async UniTaskVoid HandleSoundSettingsAsync()
         {
@@ -64,14 +43,12 @@ namespace chaos
             await UniTask.Delay(System.TimeSpan.FromSeconds(SOUND_SETTINGS_DELAY));
             HandleVolumeSettings();
         }
-        #endregion
 
-        #region Currency UI
-        private void UpdateCurrencyTexts()
+        /// <summary> 화폐 텍스트 업데이트 </summary>
+        public void UpdateCurrencyTexts()
         {
             SetEliText();
             SetStoneText();
         }
-        #endregion
     }
 }

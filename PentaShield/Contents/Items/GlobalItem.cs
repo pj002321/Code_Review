@@ -4,13 +4,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using Sirenix.OdinInspector;
 using System;
-using PentaShield;
+using penta;
 using Random = UnityEngine.Random;
-using Chaos;
+using penta;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace chaos
+namespace penta
 {
     public enum GlobalItemSkillType
     {

@@ -1,13 +1,9 @@
 using Cysharp.Threading.Tasks;
-using PentaShield;
-using TMPro;
-using UnityEngine;
-using UnityEngine.UI;
 
-namespace chaos
+namespace penta
 {
     /// <summary>
-    /// 이름 수정 버튼
+    /// 이름 수정 버튼 (주요 로직)
     /// - 사용자 이름 표시 및 수정
     /// - UserData 변경 시 자동 업데이트
     /// </summary>

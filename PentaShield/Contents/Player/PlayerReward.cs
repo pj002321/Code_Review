@@ -1,7 +1,7 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace chaos
+namespace penta
 {
     /// <summary>
     /// 플레이어 보상 및 통계 관리

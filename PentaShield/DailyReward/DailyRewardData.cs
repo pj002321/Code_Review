@@ -1,9 +1,7 @@
 using Firebase.Firestore;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 
-namespace chaos
+namespace penta
 {
     /// <summary> 출석 보상 타입 </summary>
     public enum DailyRewardType
@@ -34,7 +32,7 @@ namespace chaos
         {
         }
 
-        public DailyReward(int day, DailyRewardType rewardType, int amount, chaos.ItemType itemType = chaos.ItemType.Other)
+        public DailyReward(int day, DailyRewardType rewardType, int amount, penta.ItemType itemType = penta.ItemType.Other)
         {
             Day = day;
             RewardType = rewardType;

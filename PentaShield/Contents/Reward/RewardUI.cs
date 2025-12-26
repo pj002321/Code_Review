@@ -1,6 +1,6 @@
 using TMPro;
 using UnityEngine;
-namespace chaos
+namespace penta
 {
     public class RewardUI : MonoBehaviourSingleton<RewardUI>, IDestroyOnThisScene
     {

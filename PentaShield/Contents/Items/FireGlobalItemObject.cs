@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace chaos
+namespace penta
 {
     /// <summary>
     /// 파이어 메테오 글로벌 아이템 오브젝트 (주요 로직)

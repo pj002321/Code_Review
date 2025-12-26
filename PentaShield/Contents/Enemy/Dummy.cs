@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 
-namespace chaos
+namespace penta
 {
     /// <summary>
     /// 원거리 공격 적 (Projectile 사용)

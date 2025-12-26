@@ -1,16 +1,10 @@
-using System;
-using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using PentaShield;
-using TMPro;
-using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.UI;
 
-namespace chaos
+namespace penta
 {
     /// <summary>
-    /// 출석 보상 뷰어
+    /// 출석 보상 뷰어 (주요 로직)
     /// - 출석 체크 처리
     /// - 보상 지급
     /// - 사이클 관리 및 슬롯 생성

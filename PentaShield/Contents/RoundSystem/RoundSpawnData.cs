@@ -1,10 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-namespace chaos
+namespace penta
 {
-    [CreateAssetMenu(fileName = "New RoundSpawn Data", menuName = "PentaShield/RoundSpawn Data")]
+    [CreateAssetMenu(fileName = "New RoundSpawn Data", menuName = "penta/RoundSpawn Data")]
     public class RoundSpawnData : ScriptableObject
     {
         [System.Serializable]
