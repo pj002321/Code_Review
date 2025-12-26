@@ -11,7 +11,6 @@ public class MonoBehaviourSingleton<T> : MonoBehaviour where T : MonoBehaviour
     {
         if (shared != null && shared != this)
         {
-            Debug.LogWarning($"[{typeof(T).Name}] 중복 인스턴스 감지! 제거합니다: {gameObject.name}");
             Destroy(gameObject);
             return;
         }
@@ -20,12 +19,7 @@ public class MonoBehaviourSingleton<T> : MonoBehaviour where T : MonoBehaviour
 
         if (DontDestroy)
         {
-            Debug.Log($"[{typeof(T).Name}] DontDestroyOnLoad 적용: {gameObject.name}");
             DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Debug.Log($"[{typeof(T).Name}] DontDestroy가 false입니다: {gameObject.name}");
         }
     }
 
