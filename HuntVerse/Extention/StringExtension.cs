@@ -71,7 +71,7 @@ public static class StringExtension
         Debug.Log(s);
     }
 
-    public static void DWarning(this string s)
+    public static void DWarnning(this string s)
     {
         Debug.LogWarning(s);
     }
@@ -125,5 +125,34 @@ public static class StringExtension
     public static string SubstrInside(this string str, int step = 1)
     {
         return str.Substring(step, str.Length - (step + 1));
+    }
+
+    public static void DLog(this object obj, string message)
+    {
+        string className = obj.GetType().Name;
+        Debug.Log($"[{className}] {message}");
+    }
+
+    public static void DWarnning(this object obj, string message)
+    {
+        string className = obj.GetType().Name;
+        Debug.LogWarning($"[{className}] {message}");
+    }
+
+    public static void DError(this object obj, string message)
+    {
+        string className = obj.GetType().Name;
+        Debug.LogError($"[{className}] {message}");
+    }
+
+    private static string GetClassNameFromPath(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+        {
+            return "Unknown";
+        }
+
+        string fileName = System.IO.Path.GetFileNameWithoutExtension(filePath);
+        return fileName;
     }
 }
