@@ -33,7 +33,7 @@ namespace Hunt
             inputKey = InputManager.Shared;
             if (dialogPanel == null)
             {
-                "DialogPanel�� �Ҵ���� �ʾҽ��ϴ�".DError();
+                "DialogPanel이 없습니다.".DError();
             }
             else
             {
