@@ -33,7 +33,7 @@ namespace Hunt
         protected override bool DontDestroy => false;
         #endregion
 
-        #region Unity Lifecycle
+        #region Lifec
         protected override void Awake()
         {
             base.Awake();
@@ -187,7 +187,7 @@ namespace Hunt
         }
         #endregion
 
-        #region Public API - Query Methods
+        #region Query
         /// <summary>
         /// 특정 인덱스의 CharacterInfoField가 캐릭터 데이터를 가지고 있는지 확인합니다.
         /// </summary>
@@ -449,7 +449,7 @@ namespace Hunt
 
             if (floatStats == null || floatStats.Count < 5)
             {
-                "⚠️ [Character] 스탯이 5개 미만입니다. 기본값 사용".DLog();
+                "[Character] 스탯이 5개 미만입니다. 기본값 사용".DWarnning();
                 floatStats = new List<float> { 0.5f, 0.5f, 0.5f, 0.5f, 0.5f };
             }
 
