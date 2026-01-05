@@ -85,7 +85,7 @@ namespace penta
             await EntryGame();
         }
 
-        private string GetPlatformName()
+           private string GetPlatformName()
         {
 #if UNITY_EDITOR
             switch (UnityEditor.EditorUserBuildSettings.activeBuildTarget)
@@ -97,7 +97,11 @@ namespace penta
                     return "Android";
             }
 #else
+#if UNITY_IOS
             return "iOS";
+#else
+            return "Android";
+#endif
 #endif
         }
 
