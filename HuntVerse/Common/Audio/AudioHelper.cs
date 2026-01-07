@@ -79,7 +79,7 @@ namespace Hunt
             {
                 if (!string.IsNullOrEmpty(audioKey))
                 {
-                    loadTasks.Add(LoadAudioClipAsync(audioKey));
+                    loadTasks.Add(LoadAudioClipAsync(audioKey).AsUniTask());
                 }
             }
 
@@ -88,46 +88,49 @@ namespace Hunt
             $"🔊 [AudioHelper] AudioClip Preload Success! {audioClipCache.Count}ea load".DLog();
         }
 
-        private async UniTask LoadAudioClipAsync(string audioKey)
+        private async UniTask<AudioClip> LoadAudioClipAsync(string audioKey)
         {
-            if (AbLoader.Shared == null) return;
+            if (AbLoader.Shared == null) return null;
             try
             {
                 var audioClip = await AbLoader.Shared.LoadAssetAsync<AudioClip>(audioKey);
                 if (audioClip != null)
                 {
                     audioClipCache[audioKey] = audioClip;
-                    $"🔊 [AudioHelper] AudioClip Load Success : {audioKey}".DLog();
                 }
+                return audioClip;
             }
             catch (System.Exception ex)
             {
                 $"🔊 [AudioHelper] AudioClip Load Fail : {audioKey} - {ex.Message}".DError();
-                return;
+                return null;
             }
         }
 
         public void PlaySfx(string audioKey, float volumeScale = 1.0f)
         {
+            if (string.IsNullOrEmpty(audioKey)) return;
             PlaySfxAsync(audioKey, volumeScale).Forget();
         }
 
         private async UniTaskVoid PlaySfxAsync(string audioKey, float volumeScale = 1.0f)
         {
-            // 캐시에 없으면 즉시 로드
-            if (!audioClipCache.TryGetValue(audioKey, out var clip))
+            AudioClip clip = null;
+
+            if (!audioClipCache.TryGetValue(audioKey, out clip))
             {
                 if (!isPreloadComplete)
                 {
                     await UniTask.WaitUntil(() => isPreloadComplete);
-
-                    if (!audioClipCache.TryGetValue(audioKey, out clip))
-                    {
-                        $"🔊 [AudioHelper] AudioClip not Find: {audioKey}".DError();
-                        return;
-                    }
+                    audioClipCache.TryGetValue(audioKey, out clip);
                 }
-                else
+
+                if (clip == null && AbLoader.Shared != null)
+                {
+                    clip = await LoadAudioClipAsync(audioKey);
+                }
+
+                if (clip == null)
                 {
                     $"🔊 [AudioHelper] AudioClip not Find: {audioKey}".DError();
                     return;
@@ -136,27 +139,47 @@ namespace Hunt
 
             if (!audioSfxPool.TryDequeue(out var sfxSource))
             {
-                $"🔊 [AudioHelper] SFX Pool shortage.. Create Pool".DLog();
                 sfxSource = CreateSfxSource();
+            }
+
+            if (sfxSource == null) return;
+
+            if (sfxSource.isPlaying)
+            {
+                sfxSource.Stop();
             }
 
             sfxSource.clip = clip;
             sfxSource.volume = sfxVolume * volumeScale;
             sfxSource.Play();
-            activeSfxSources.Add(sfxSource);
+
+            if (!activeSfxSources.Contains(sfxSource))
+            {
+                activeSfxSources.Add(sfxSource);
+            }
 
             ReturnSfxSourceToPoolAfterPlay(sfxSource, clip.length).Forget();
         }
 
         private async UniTaskVoid ReturnSfxSourceToPoolAfterPlay(AudioSource source, float delay)
         {
-            await UniTask.Delay((int)(delay * 1000));
+            if (source == null) return;
+
+            await UniTask.Delay(System.TimeSpan.FromSeconds(delay));
+
+            if (source != null && source.isPlaying)
+            {
+                await UniTask.WaitUntil(() => source == null || !source.isPlaying);
+            }
 
             if (source != null)
             {
                 source.Stop();
                 source.clip = null;
-                activeSfxSources.Remove(source);
+                if (activeSfxSources.Contains(source))
+                {
+                    activeSfxSources.Remove(source);
+                }
                 audioSfxPool.Enqueue(source);
             }
         }
@@ -168,7 +191,7 @@ namespace Hunt
 
         private async UniTaskVoid PlayBgmAsync(string audioKey, bool loop = true, float fadeInDuration = 0f)
         {
-            // 캐시에 없으면 Preload 완료 대기
+            
             if (!audioClipCache.TryGetValue(audioKey, out var clip))
             {
                 if (!isPreloadComplete)
