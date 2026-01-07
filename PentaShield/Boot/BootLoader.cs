@@ -4,14 +4,12 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.AddressableAssets;
 
 namespace penta
 {
     /// <summary>
-    /// 게임 부팅 및 초기화 프로세스 관리 (주요 로직)
-    /// - Addressable 다운로드 관리
-    /// - 점검/업데이트 체크
-    /// - 진행률 표시
+    /// 게임 부팅 및 초기화 프로세스 관리
     /// </summary>
     public class BootLoader : MonoBehaviour
     {
@@ -25,6 +23,7 @@ namespace penta
         private Slider progressBar;
         private TextMeshProUGUI progressText;
         private TextMeshProUGUI progressGuideText;
+
         private BootingGuide bootingGuide;
         private GameObject bootWindowInstance;
         private float currentDisplayProgress = 0f;
@@ -36,45 +35,36 @@ namespace penta
 
         private AddressableDownloadManager downloadManager;
         private AddressableSystemManager systemManager;
-
+        
         private void Awake()
         {
+            if (bootWindowPrefab == null)
+            {
+                "Boot window prefab is null".DError();
+                return;
+            }
             bootWindowInstance = Instantiate(bootWindowPrefab);
             bootingGuide = bootWindowInstance.GetComponent<BootingGuide>();
 
-            var bootprogress = bootWindowInstance.GetComponentInChildren<BootProgress>();
-            if (bootprogress != null)
+            if (bootingGuide == null)
             {
-                progressText = bootprogress.loadingPercentText;
-                progressGuideText = bootprogress.loadingGuideText;
+                "BootingGuide component is missing".DError();
+                return;
             }
 
-            progressBar = bootWindowInstance.GetComponentInChildren<Slider>();
+            var bootprogress = bootingGuide.GetComponentInChildren<BootProgress>();
+            progressBar = bootingGuide.GetComponentInChildren<Slider>();
+            progressText = bootprogress.loadingPercentText;
+            progressGuideText = bootprogress.loadingGuideText;
 
             AddressableSystemManager.InitializeEarly();
         }
 
-        private void OnDestroy()
-        {
-            if (downloadManager != null)
-            {
-                downloadManager.OnAllDownloadsComplete -= OnDownloadComplete;
-                downloadManager.OnProgressChanged -= OnProgressChanged;
-                downloadManager.OnDownloadStatsUpdated -= OnDownloadStatsUpdated;
-            }
-
-            if (bootWindowInstance != null)
-            {
-                Destroy(bootWindowInstance);
-            }
-        }
-
-        /// <summary> 게임 부팅 프로세스 시작 </summary>
-        public async UniTask InitializeAsync()
+        private async void Start()
         {
             var config = FirebaseConfig.Load();
             string platform = GetPlatformName();
-
+            
             downloadManager = new AddressableDownloadManager(config, platform);
             systemManager = new AddressableSystemManager(platform, downloadManager.AssetFolderPath);
 
@@ -85,23 +75,14 @@ namespace penta
             await EntryGame();
         }
 
-           private string GetPlatformName()
+        private string GetPlatformName()
         {
 #if UNITY_EDITOR
-            switch (UnityEditor.EditorUserBuildSettings.activeBuildTarget)
-            {
-                case UnityEditor.BuildTarget.iOS:
-                    return "iOS";
-                case UnityEditor.BuildTarget.Android:
-                default:
-                    return "Android";
-            }
-#else
-#if UNITY_IOS
+            return UnityEditor.EditorUserBuildSettings.activeBuildTarget == UnityEditor.BuildTarget.iOS ? "iOS" : "Android";
+#elif UNITY_IOS
             return "iOS";
-#else
+#elif UNITY_ANDROID
             return "Android";
-#endif
 #endif
         }
 
@@ -122,24 +103,35 @@ namespace penta
         private void OnProgressChanged(float progress)
         {
             targetProgress = progress;
-            if (!isAnimating)
+            if (!isAnimating) StartCoroutine(AnimateProgress());
+
+            if (downloadManager == null)
             {
-                StartCoroutine(AnimateProgress());
+                UpdateProgressGuideText();
+                return;
             }
+            
+            var stats = downloadManager.DownloadStats;
+            if (stats.totalBytes > 0 || stats.bytes > 0)
+            {
+                currentDownloadedBytes = stats.bytes;
+                currentTotalBytes = stats.totalBytes;
+            }
+
+            UpdateProgressGuideText();
         }
 
-        /// <summary> 진행률 애니메이션 </summary>
         private IEnumerator AnimateProgress()
         {
             isAnimating = true;
-
+            
             while (Mathf.Abs(currentDisplayProgress - targetProgress) > 0.01f)
             {
                 currentDisplayProgress = Mathf.Lerp(currentDisplayProgress, targetProgress, Time.deltaTime * 3f);
                 UpdateProgressDisplay();
                 yield return null;
             }
-
+            
             currentDisplayProgress = targetProgress;
             UpdateProgressDisplay();
             isAnimating = false;
@@ -154,32 +146,25 @@ namespace penta
 
             if (progressText != null)
             {
-                int percentage = Mathf.RoundToInt(currentDisplayProgress * 100f);
-                progressText.text = $"{percentage}%";
+                progressText.text = $"{Mathf.RoundToInt(currentDisplayProgress * 100f)}%";
             }
         }
 
-        /// <summary> 게임 진입 프로세스 </summary>
         private async UniTask EntryGame()
         {
-            currentDisplayProgress = 0f;
-            targetProgress = 0f;
+            currentDisplayProgress = targetProgress = 0f;
             UpdateProgressDisplay();
 
-            bool isMaintenance = await CheckMaintenanceFlag();
-            if (isMaintenance)
+#if !UNITY_EDITOR
+            if (await CheckMaintenanceFlag())
             {
-                if (maintenanceNoti != null)
-                {
-                    maintenanceNoti.gameObject.SetActive(true);
-                }
+                maintenanceNoti?.gameObject.SetActive(true);
                 return;
             }
-
-            bool needsUpdate = await CheckCatalogVersion();
-            if (needsUpdate)
+#endif
+            if (await CheckCatalogVersion())
             {
-                needUpdateNoti.gameObject.SetActive(true);
+                needUpdateNoti?.gameObject.SetActive(true);
                 return;
             }
 
@@ -188,6 +173,8 @@ namespace penta
             await UniTask.WaitUntil(() => downloadComplete);
 
 #if !UNITY_EDITOR
+            // 다운로드가 끝났지만, 다운로드된 Addressable 카탈로그 버전이
+            // 현재 앱 번들 버전과 다르면 게임을 진행하지 않고 업데이트 노티를 띄운다.
             try
             {
                 var appVersion = Application.version;
@@ -206,9 +193,9 @@ namespace penta
             }
             catch (System.Exception e)
             {
+                $"카탈로그 버전 확인 실패: {e.Message}".DError();
             }
 #endif
-
             await systemManager.RefreshAfterDownload(downloadManager.DownloadStats.downloaded);
 
             targetProgress = 1f;
@@ -228,109 +215,76 @@ namespace penta
             await SceneSystem.Shared.LoadScene(PentaConst.kmainMenu_Scene);
         }
 
-        /// <summary> 진행 가이드 텍스트 업데이트 </summary>
         private void UpdateProgressGuideText()
         {
             if (progressGuideText == null) return;
 
             if (downloadComplete)
             {
-                progressGuideText.text = "Loading...";
+                progressGuideText.text = "Falling!";
                 return;
             }
 
-            if (currentDownloadedBytes > 0 || currentTotalBytes > 0)
-            {
-                float downloadedMB = currentDownloadedBytes / 1048576f;
-                float totalMB = currentTotalBytes / 1048576f;
-                progressGuideText.text = $"Downloading World ({downloadedMB:F1} MB / {totalMB:F1} MB)";
-            }
-            else
-            {
-                progressGuideText.text = "Loading...";
-            }
+            progressGuideText.text = (currentDownloadedBytes > 0 || currentTotalBytes > 0)
+                ? $"Downloading World ({currentDownloadedBytes / 1048576f:F1} MB / {currentTotalBytes / 1048576f:F1} MB)"
+                : "Loading...";
         }
 
-        /// <summary> 카탈로그 버전 체크 </summary>
         private async UniTask<bool> CheckCatalogVersion()
         {
             try
             {
-                var initHandle = UnityEngine.AddressableAssets.Addressables.InitializeAsync();
+                var initHandle =Addressables.InitializeAsync();
                 await initHandle.ToUniTask();
-                UnityEngine.AddressableAssets.Addressables.Release(initHandle);
+                Addressables.Release(initHandle);
 
-                var checkHandle = UnityEngine.AddressableAssets.Addressables.CheckForCatalogUpdates(false);
+                var checkHandle = Addressables.CheckForCatalogUpdates(false);
                 var catalogsToUpdate = await checkHandle.ToUniTask();
 
                 bool hasUpdate = catalogsToUpdate != null && catalogsToUpdate.Count > 0;
 
-                UnityEngine.AddressableAssets.Addressables.Release(checkHandle);
+                Addressables.Release(checkHandle);
                 return hasUpdate;
             }
             catch (System.Exception e)
             {
+                $"[BootLoader] Catalog 버전 확인 실패: {e.Message}".DError();
                 return false;
             }
         }
 
-        /// <summary> 점검 플래그 확인 </summary>
+        /// <summary>
+        /// Realtime DB에서 점검 플래그를 확인한다.
+        /// </summary>
         private async UniTask<bool> CheckMaintenanceFlag()
         {
             try
             {
-                int maxWait = 200;
-                int waited = 0;
-
-                while (PentaFirebase.Shared == null && waited < maxWait)
+                for (int waited = 0; PentaFirebase.Shared == null && waited < 200; waited++)
                 {
                     await UniTask.Delay(100);
-                    waited++;
                 }
+                if (PentaFirebase.Shared == null) return false;
 
-                if (PentaFirebase.Shared == null)
-                {
-                    return false;
-                }
-
-                maxWait = 200;
-                waited = 0;
-
-                while (!PentaFirebase.Shared.IsInitialized && waited < maxWait)
+                for (int waited = 0; !PentaFirebase.Shared.IsInitialized && waited < 200; waited++)
                 {
                     await UniTask.Delay(100);
-                    waited++;
                 }
-
-                if (!PentaFirebase.Shared.IsInitialized)
-                {
-                    return false;
-                }
+                if (!PentaFirebase.Shared.IsInitialized) return false;
 
                 var rtDb = PentaFirebase.Shared?.PRealTimeDb;
-                if (rtDb == null)
-                {
-                    return false;
-                }
+                if (rtDb == null) return false;
 
-                maxWait = 100;
-                waited = 0;
-
-                while (!rtDb.IsInitialized && waited < maxWait)
+                for (int waited = 0; !rtDb.IsInitialized && waited < 100; waited++)
                 {
                     await UniTask.Delay(100);
-                    waited++;
                 }
-
-                if (!rtDb.IsInitialized)
-                {
-                    return false;
-                }
+                if (!rtDb.IsInitialized) return false;
 
                 const string path = "maintenance/is_on";
                 var value = await rtDb.GetValueAsync(path);
                 bool result = false;
-
+                
                 if (value is bool b)
                 {
                     result = b;
@@ -344,11 +298,14 @@ namespace penta
             }
             catch (System.Exception e)
             {
+                $"Maintenance 플래그 확인 실패: {e.Message}".DError();
                 return false;
             }
         }
 
-        /// <summary> 카탈로그 버전이 앱 버전보다 높은지 확인 </summary>
+        /// <summary>
+        /// catalogVersion이 appVersion보다 높으면 true.
+        /// </summary>
         private bool IsCatalogNewer(string catalogVersion, string appVersion)
         {
             var c = ParseVersion(catalogVersion);
@@ -371,7 +328,6 @@ namespace penta
             return (major, minor, patch);
         }
 
-        /// <summary> 게임 종료 </summary>
         public void QuitGame()
         {
 #if UNITY_EDITOR
@@ -379,6 +335,21 @@ namespace penta
 #else
             Application.Quit();
 #endif
+        }
+
+        private void OnDestroy()
+        {
+            if (downloadManager != null)
+            {
+                downloadManager.OnAllDownloadsComplete -= OnDownloadComplete;
+                downloadManager.OnProgressChanged -= OnProgressChanged;
+                downloadManager.OnDownloadStatsUpdated -= OnDownloadStatsUpdated;
+            }
+
+            if (bootWindowInstance != null)
+            {
+                Destroy(bootWindowInstance);
+            }
         }
     }
 }
