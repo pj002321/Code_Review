@@ -6,7 +6,7 @@ using UnityEngine.Audio;
 
 namespace Hunt
 {
-    public class AudioHelper : MonoBehaviourSingleton<AudioHelper>
+    public class AudioManager : MonoBehaviourSingleton<AudioManager>
     {
         [Header("AUDIO MIXER")]
         [SerializeField] private AudioMixer audioMixer;

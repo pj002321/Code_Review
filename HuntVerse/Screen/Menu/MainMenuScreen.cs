@@ -13,8 +13,8 @@ namespace Hunt
         [SerializeField] Button enterVillageButton;
         private async void Awake()
         {
-            await UniTask.WaitUntil(() => AudioHelper.Shared);
-            AudioHelper.Shared.PlayBgm(AudioKeyConst.GetSfxKey(AudioType.BGM_MAIN));
+            await UniTask.WaitUntil(() => AudioManager.Shared);
+            AudioManager.Shared.PlayBgm(AudioKeyConst.GetSfxKey(AudioType.BGM_MAIN));
             enterVillageButton.onClick.AddListener(() => EnterVillage().Forget());
             OnViewMainHud();
         }

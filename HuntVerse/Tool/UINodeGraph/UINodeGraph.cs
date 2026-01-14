@@ -21,8 +21,11 @@ namespace Hunt
         public void Bake()
         {
 #if UNITY_EDITOR
+            $"[Bake] 시작 - Graph: {name}".DLog();
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
+            
+            CleanupOldBakedEvents();
             
             bakedData = new UIGraphRuntimeData();
             BakeNodes();
@@ -30,6 +33,50 @@ namespace Hunt
             
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
+            $"[Bake] 완료 - Graph: {name}".DLog();
+#endif
+        }
+        
+        private void CleanupOldBakedEvents()
+        {
+#if UNITY_EDITOR
+            var processedButtons = new HashSet<GameObject>();
+            var processedKeyboardObjects = new HashSet<GameObject>();
+            int totalRemoved = 0;
+            
+            foreach (var node in nodes)
+            {
+                if (node is ButtonClickNode btnNode && btnNode.targetButton != null)
+                {
+                    if (!processedButtons.Add(btnNode.targetButton)) continue;
+                    
+                    var allComponents = btnNode.targetButton.GetComponents<UIGraphBakedEvent>();
+                    foreach (var comp in allComponents)
+                    {
+                        if (comp != null)
+                        {
+                            UnityEngine.Object.DestroyImmediate(comp);
+                            totalRemoved++;
+                        }
+                    }
+                }
+                else if (node is KeyboardInputNode keyNode && keyNode.targetGameObject != null)
+                {
+                    if (!processedKeyboardObjects.Add(keyNode.targetGameObject)) continue;
+                    
+                    var allComponents = keyNode.targetGameObject.GetComponents<UIGraphBakedKeyboardEvent>();
+                    foreach (var comp in allComponents)
+                    {
+                        if (comp != null)
+                        {
+                            UnityEngine.Object.DestroyImmediate(comp);
+                            totalRemoved++;
+                        }
+                    }
+                }
+            }
+            
+            $"[Cleanup] 제거된 컴포넌트: {totalRemoved}개".DLog();
 #endif
         }
         
@@ -58,30 +105,45 @@ namespace Hunt
         private void BakeButtonEvents()
         {
 #if UNITY_EDITOR
+            var processedButtons = new HashSet<GameObject>();
+            var processedKeyboardObjects = new HashSet<GameObject>();
+            int buttonCount = 0;
+            int keyboardCount = 0;
+            
             foreach (var node in nodes)
             {
                 if (node is ButtonClickNode btnNode && btnNode.targetButton != null)
                 {
+                    if (!processedButtons.Add(btnNode.targetButton)) continue;
+                    
                     var button = btnNode.targetButton.GetComponent<UnityEngine.UI.Button>();
                     if (button == null) continue;
-                    
-                    var existingEvent = btnNode.targetButton.GetComponent<UIGraphBakedEvent>();
-                    if (existingEvent != null)
-                    {
-                        UnityEventTools.RemovePersistentListener(button.onClick, existingEvent.OnButtonClick);
-                        Undo.DestroyObjectImmediate(existingEvent);
-                    }
                     
                     var bakedEvent = btnNode.targetButton.AddComponent<UIGraphBakedEvent>();
                     bakedEvent.SetGraph(this);
                     bakedEvent.SetStartNodeGuid(btnNode.guid);
-                    UnityEventTools.AddPersistentListener(button.onClick, bakedEvent.OnButtonClick);
                     
                     EditorUtility.SetDirty(bakedEvent);
                     EditorUtility.SetDirty(button);
                     EditorUtility.SetDirty(btnNode.targetButton);
+                    buttonCount++;
+                }
+                else if (node is KeyboardInputNode keyNode && keyNode.targetGameObject != null && keyNode.targetKeyCode != KeyCode.None)
+                {
+                    if (!processedKeyboardObjects.Add(keyNode.targetGameObject)) continue;
+                    
+                    var bakedKeyboardEvent = keyNode.targetGameObject.AddComponent<UIGraphBakedKeyboardEvent>();
+                    bakedKeyboardEvent.SetGraph(this);
+                    bakedKeyboardEvent.SetStartNodeGuid(keyNode.guid);
+                    bakedKeyboardEvent.SetKeyCode(keyNode.targetKeyCode);
+                    
+                    EditorUtility.SetDirty(bakedKeyboardEvent);
+                    EditorUtility.SetDirty(keyNode.targetGameObject);
+                    keyboardCount++;
                 }
             }
+            
+            $"[Bake] 추가된 컴포넌트 - Button: {buttonCount}개, Keyboard: {keyboardCount}개".DLog();
 #endif
         }
         
@@ -90,6 +152,8 @@ namespace Hunt
 #if UNITY_EDITOR
             if (node is ButtonClickNode btnNode && btnNode.targetButton != null)
                 EditorUtility.SetDirty(btnNode.targetButton);
+            else if (node is KeyboardInputNode keyNode && keyNode.targetGameObject != null)
+                EditorUtility.SetDirty(keyNode.targetGameObject);
             else if (node is HideGameObjectNode hideNode && hideNode.targetGameObjects != null)
             {
                 foreach (var obj in hideNode.targetGameObjects) if (obj != null) EditorUtility.SetDirty(obj);
@@ -102,6 +166,8 @@ namespace Hunt
             {
                 foreach (var obj in toggleNode.targetGameObjects) if (obj != null) EditorUtility.SetDirty(obj);
             }
+            else if (node is ExecuteMethodNode execNode && execNode.targetObject != null)
+                EditorUtility.SetDirty(execNode.targetObject);
 #endif
         }
         

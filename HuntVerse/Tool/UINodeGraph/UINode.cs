@@ -17,12 +17,14 @@ namespace Hunt
     public enum UINodeType
     {
         ButtonClick,
+        KeyboardInput,
         HideLayer,
         ShowLayer,
         ToggleLayer,
         HideGameObject,
         ShowGameObject,
         ToggleGameObject,
-        Delay
+        Delay,
+        ExecuteMethod
     }
 }

@@ -19,6 +19,7 @@ namespace Hunt
         
         private void Start()
         {
+            // Start에서도 한 번 더 시도 (UIManager가 나중에 초기화될 수 있음)
             RegisterToManager();
         }
         
@@ -26,26 +27,27 @@ namespace Hunt
         {
             if (string.IsNullOrEmpty(targetId))
             {
-                this.DError($"{gameObject.name}의 targetId가 비어있습니다.");
+                Debug.LogWarning($"[UIGraphTarget] {gameObject.name}의 targetId가 비어있습니다.");
                 return;
             }
             
             if (UIManager.Shared == null)
             {
-                this.DError($"{gameObject.name}: UIManager.Shared가 null입니다. 나중에 다시 시도합니다.");
+                Debug.LogWarning($"[UIGraphTarget] {gameObject.name}: UIManager.Shared가 null입니다. 나중에 다시 시도합니다.");
                 return;
             }
             
-          
+            // 이미 등록되어 있는지 확인
             var existing = UIManager.Shared.FindGameObjectById(targetId);
             if (existing == gameObject)
             {
+                // 이미 등록됨
                 return;
             }
             
-            this.DLog($"{gameObject.name} (ID: {targetId}) 등록 중...");
+            Debug.Log($"[UIGraphTarget] {gameObject.name} (ID: {targetId}) 등록 중...");
             UIManager.Shared.RegisterGraphTarget(this);
-            this.DLog($"{gameObject.name} (ID: {targetId}) 등록 완료");
+            Debug.Log($"[UIGraphTarget] {gameObject.name} (ID: {targetId}) 등록 완료");
         }
         
         private void OnDestroy()
@@ -60,6 +62,7 @@ namespace Hunt
         {
             if (targetId == id) return;
             
+            // 기존 ID 해제
             if (!string.IsNullOrEmpty(targetId) && UIManager.Shared != null)
             {
                 UIManager.Shared.UnregisterGraphTarget(targetId);
@@ -67,6 +70,7 @@ namespace Hunt
             
             targetId = id;
             
+            // 새 ID 등록
             if (!string.IsNullOrEmpty(targetId) && UIManager.Shared != null)
             {
                 UIManager.Shared.RegisterGraphTarget(this);

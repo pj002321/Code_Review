@@ -126,7 +126,7 @@ namespace penta
         {
             if (!_islevelupreward) ReduceItemCount(ItemType.God);
             IsSkillIcon.Shared.OnCreatePlayerIcon(PentaConst.KGIconGod).Forget();
-            AudioHelper.PlaySFX(AudioConst.GLOBAL_ITEM_GOD,2f);
+            AudioManager.Shared.PlaySfx(AudioConst.GLOBAL_ITEM_GOD,2f);
             GodFx().Forget();
             godCooldownRemaining = cooldownGod;
 

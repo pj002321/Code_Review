@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Cysharp.Threading.Tasks;
+using UnityEngine.Events;
 
 namespace Hunt
 {
@@ -10,37 +11,81 @@ namespace Hunt
     /// </summary>
     public class UIGraphBakedEvent : MonoBehaviour
     {
-        [SerializeField] private UINodeGraph graph;
-        [SerializeField] private string startNodeGuid; // ButtonClickNode의 GUID
+        [SerializeField] private UINodeGraph _graph;
+        [SerializeField] private string _startNodeGuid; // ButtonClickNode의 GUID
+        
+        public UINodeGraph graph => _graph;
+        public string startNodeGuid => _startNodeGuid;
+        
+        private Button _button;
+        private UnityAction _onClickAction;
+        private bool _isRegistered = false;
         
 #if UNITY_EDITOR
-        public void SetGraph(UINodeGraph g) => graph = g;
-        public void SetStartNodeGuid(string guid) => startNodeGuid = guid;
+        public void SetGraph(UINodeGraph g) => _graph = g;
+        public void SetStartNodeGuid(string guid) => _startNodeGuid = guid;
 #endif
+        
+        private void Awake()
+        {
+            _button = GetComponent<Button>();
+        }
+        
+        public void RegisterToButton()
+        {
+            if (_button == null)
+            {
+                _button = GetComponent<Button>();
+            }
+            
+            if (_button != null && !_isRegistered)
+            {
+                _onClickAction = OnButtonClick;
+                _button.onClick.AddListener(_onClickAction);
+                _isRegistered = true;
+            }
+        }
+        
+        public void UnregisterFromButton()
+        {
+            if (_button != null && _onClickAction != null && _isRegistered)
+            {
+                _button.onClick.RemoveListener(_onClickAction);
+                _isRegistered = false;
+            }
+        }
+        
+        private void OnEnable()
+        {
+            RegisterToButton();
+        }
+        
+        private void OnDisable()
+        {
+            UnregisterFromButton();
+        }
         
         public void OnButtonClick()
         {
-            Debug.Log($"[UIGraphBakedEvent] OnButtonClick 호출됨 - graph: {graph?.name}, startNodeGuid: {startNodeGuid}, UIManager: {UIManager.Shared != null}");
-            
-            if (graph == null)
+            if (_graph == null)
             {
-                Debug.LogError("[UIGraphBakedEvent] graph가 null입니다.");
+                $"UIGraphBakedEvent: graph가 null입니다.".DWarnning();
                 return;
             }
             
             if (UIManager.Shared == null)
             {
-                Debug.LogError("[UIGraphBakedEvent] UIManager.Shared가 null입니다.");
+                $"UIGraphBakedEvent: UIManager.Shared가 null입니다.".DWarnning();
                 return;
             }
             
-            if (string.IsNullOrEmpty(startNodeGuid))
+            if (string.IsNullOrEmpty(_startNodeGuid))
             {
-                Debug.LogError("[UIGraphBakedEvent] startNodeGuid가 비어있습니다.");
+                $"UIGraphBakedEvent: startNodeGuid가 비어있습니다.".DWarnning();
                 return;
             }
             
-            UIManager.Shared.ExecuteGraphFromNode(graph, startNodeGuid).Forget();
+            UIManager.Shared.ExecuteGraphFromNode(_graph, _startNodeGuid).Forget();
         }
     }
 }
