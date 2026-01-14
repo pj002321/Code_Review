@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Hunt
 {
     [Serializable]
-    public class ChannelListRequest
+    public class WorldListRequest
     {
         public List<ChannelModel> channels;
     }

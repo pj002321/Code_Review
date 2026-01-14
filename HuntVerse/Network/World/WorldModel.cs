@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace Hunt
 {
-    public class ChannelModel
+    public class WorldModel
     {
         public string channelName;
         public int congestion;
