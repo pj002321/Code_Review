@@ -7,7 +7,6 @@ using Hunt.Net;
 
 namespace Hunt
 {
-    
     public class SelectMenuAction : MonoBehaviour
     {
         [Header("Menu Items")]
@@ -48,7 +47,6 @@ namespace Hunt
         {
             if (menuFields.Count == 0) return;
 
-            // Ű���� Ž�� (��/W, ��/S)
             if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
             {
                 Move(-1);
@@ -58,7 +56,6 @@ namespace Hunt
                 Move(+1);
             }
 
-            // Enter �Ǵ� KeypadEnter�� ���� ����
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
             {
                 SubmitCurrent();

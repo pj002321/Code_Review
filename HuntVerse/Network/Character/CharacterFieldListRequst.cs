@@ -8,7 +8,7 @@ namespace Hunt
     [Serializable]
     public class CharacterFieldListRequst
     {
-        public List<CharacterModel> chfields;
+        public List<CharModel> chfields;
     }
 
 }

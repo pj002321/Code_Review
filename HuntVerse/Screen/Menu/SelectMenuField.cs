@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace Hunt
-{
+{ 
     public class SelectMenuField : MonoBehaviour, IPointerEnterHandler, IPointerClickHandler
     {
         private SelectMenuAction controller;
