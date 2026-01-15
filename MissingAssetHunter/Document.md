@@ -4,6 +4,8 @@
 
 MissingAssetHunter는 Unity 프로젝트에서 누락되거나 손상된 에셋을 찾아내는 에디터 확장 도구입니다. 씬과 프리팹을 분석하여 Missing Script, Missing Material, Broken Prefab 등의 문제를 탐지하고 상세한 분석 리포트를 제공합니다.
 
+📥 https://assetstore.unity.com/packages/tools/game-toolkits/missing-asset-hunter-335508
+
 ---
 
 ## 📁 코드 구조
