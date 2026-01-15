@@ -214,9 +214,6 @@ namespace Kirist.EditorTool
                 }
             }
             
-
-
-
             private bool HasShaderFunctionMismatch(string shaderContent)
             {
                 try
@@ -301,25 +298,6 @@ namespace Kirist.EditorTool
                     return true;
                 }
             }
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
             private List<string> AnalyzeTransformSymmetry(GameObject prefab)
             {
