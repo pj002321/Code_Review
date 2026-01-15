@@ -86,7 +86,7 @@ for (int i = 0; i < components.Length; i++)
 #### ① Material 검증
 ```csharp
 - Material이 null인 경우
-- Error Material 상태 확인 (핑크색 에러 머티리얼)
+- Error Material 상태 확인 (Magenta Material)
 - Material 경로 유효성 검사
 ```
 
