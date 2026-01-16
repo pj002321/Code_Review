@@ -1,6 +1,5 @@
 using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
-using System.Threading;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -40,7 +39,7 @@ namespace Hunt
         private GameObject model;
         private InputManager inputKey;
         private IsAttackPointer hitpointer;
-
+        private IsNotiPoint notiPoint;
         private HashSet<IInteractable> nearbyInteractables = new HashSet<IInteractable>();
         private IInteractable currentInteractable;
 
@@ -59,6 +58,7 @@ namespace Hunt
             rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             hitpointer = GetComponentInChildren<IsAttackPointer>();
             hitpointer.SetT(new Vector3(2.0f, 0.5f, 0f), new Vector2(1,1.25f)); // Custom
+            notiPoint = GetComponentInChildren<IsNotiPoint>();
         }
         private void OnEnable()
         {
@@ -161,7 +161,6 @@ namespace Hunt
 
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
             coyoteTimeCounter = 0f;
-            animator?.SetBool(AniKeyConst.k_bGround, true);
         }
         /// <summary>
         /// NPC가 "나랑 대화 가능해!" 알림
@@ -172,7 +171,7 @@ namespace Hunt
 
             nearbyInteractables.Add(interactable);
             $"[UserCharLoco] {interactable.GetTransform().name} 등록 (총 {nearbyInteractables.Count}개)".DLog();
-            UpdateInteractionUI();
+            UpdateInteractionUI().Forget();
         }
 
         /// <summary>
@@ -184,7 +183,7 @@ namespace Hunt
 
             nearbyInteractables.Remove(interactable);
             $"[UserCharLoco] {interactable.GetTransform().name} 해제 (남은 {nearbyInteractables.Count}개)".DLog();
-            UpdateInteractionUI();
+            UpdateInteractionUI().Forget();
         }
 
         public void SetJumpEnabled(bool enabled) => isJumpping = enabled;
@@ -211,20 +210,28 @@ namespace Hunt
             return nearest;
         }
 
-        private void UpdateInteractionUI()
+        private async UniTask UpdateInteractionUI()
         {
             var nearest = GetNearestInteractable();
 
-            if (nearest != null)
+            if (nearest != null && notiPoint != null && notiPoint.renderer != null)
             {
                 string text = nearest.GetInteractionText();
-                $"[UserCharLoco] UI 표시: {text}".DLog();
-                // TODO: InteractionUIManager.Shared.ShowPrompt(text);
+
+                var sprite = await AbLoader.Shared.LoadAssetAsync<Sprite>(NotiInteractionConst.ks_normal_noti);
+                if (sprite != null)
+                {
+                    notiPoint.renderer.sprite = sprite;
+                    $"[UserCharLoco] Noti 활성화".DLog();
+                }
             }
             else
             {
                 $"[UserCharLoco] UI 숨김".DLog();
-                // TODO: InteractionUIManager.Shared.HidePrompt();
+                if (notiPoint != null && notiPoint.renderer != null)
+                {
+                    notiPoint.renderer.sprite = null;
+                }
             }
         }
         private async void SpawnAttackVfx()
@@ -237,7 +244,7 @@ namespace Hunt
                 return;
             }
                         
-            if (VfxHelper.Shared == null)
+            if (VfxManager.Shared == null)
             {
                 $"⚔️ [PlayerAction] VfxHelper.Shared가 null!".DError();
                 return;
@@ -246,7 +253,7 @@ namespace Hunt
             var playerScale = transform.localScale;
             var vfxScale = new Vector3(playerScale.x, 1f, 1f);
             
-            var vfxHandle = await VfxHelper.Shared.PlayOneShot(
+            var vfxHandle = await VfxManager.Shared.PlayOneShot(
                 VfxKetConst.Kp_plain_hit_astera,
                 hitpointer.GetT().position,
                 hitpointer.GetT().rotation,
@@ -299,6 +306,9 @@ namespace Hunt
                 );
 
             isGrounded = hit.collider != null;
+            
+
+            animator?.SetBool(AniKeyConst.k_bGround, !isGrounded);
 
             if (isGrounded)
             {
@@ -313,7 +323,7 @@ namespace Hunt
 
         private void OnLanded()
         {
-            animator?.SetBool(AniKeyConst.k_bGround, false);
+           // VFX
         }
 
 
