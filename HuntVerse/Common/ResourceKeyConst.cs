@@ -20,7 +20,8 @@ namespace Hunt
     {
         public static readonly string Ks_Mainmenu = "mainmenu@scene";
         public static readonly string Ks_Village = "village@scene";
-
+        public static readonly string Ks_Core = "core@scene";
+        public static readonly string Ks_FieldDungeon = "fielddungeon@scene";
         public static readonly string Ka_isActive = "IsActive";
 
         // Sprite

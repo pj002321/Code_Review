@@ -20,7 +20,7 @@ namespace Hunt
         }
         private async UniTask EnterVillage()
         {
-            await SceneLoadHelper.Shared.LoadSceneSingleMode(ResourceKeyConst.Ks_Village);
+            await SceneLoadHelper.Shared.LoadSceneSingleMode(ResourceKeyConst.Ks_Core, isfadeactive: true, deferFadeOutUntilManually: true);
         }
         public void OnViewCharacterSelectHud()
         {
