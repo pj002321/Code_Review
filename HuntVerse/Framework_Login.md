@@ -38,13 +38,11 @@ sequenceDiagram
 
     User->>UI: ID/PW 입력 및 버튼 클릭
     
-    rect rgb(240, 240, 240)
     Note over UI: 1. 클라이언트 유효성 검증
     UI->>UI: 빈 값 / 특수문자 체크
     alt 입력값 오류
         UI->>Noti: GetAuthNotiMsg(FAIL_INPUT)
         UI-->>User: 에러 메시지 출력 (Toast/Text)
-    end
     end
 
     UI->>Service: ReqAuthVaild(id, pw) 요청
@@ -56,12 +54,10 @@ sequenceDiagram
     Service->>Service: NotifyLoginResponse(ErrorType)
     Service-->>UI: 이벤트 발생 (OnLoginResponse)
 
-    rect rgb(230, 245, 255)
     Note over UI: 2. 응답 처리 및 UI 갱신
     UI->>Noti: GetAuthNotiMsg(ErrorType)
     Noti-->>UI: 메시지 및 색상 반환
     UI-->>User: 성공/실패 알림 표시 & 씬 이동
-    end
 ```
 
 ---
