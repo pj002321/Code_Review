@@ -25,6 +25,43 @@
 | **진행 (Battle)** | 제한 시간 체크, 게임 로직 실행 | `StartRound`, `ResumeRound` |
 | **종료 (End)** | 결과 저장, 오브젝트 정리, 업그레이드 UI 호출 | `CompleteRound` |
 
+<details>
+<summary>📄 RoundSystem.cs 코드 확인하기</summary>
+
+```csharp
+// RoundSystem.cs
+private async UniTask InitializeAsync()
+{
+    InitializeUI();
+    InitializeTimer();
+    InitializeSceneReference();
+    
+    await WaitForUpgradeTable();
+    await SpawnDefaultElemental();
+    await UniTask.Yield();
+    StartRound(currentRound);
+}
+
+private async UniTask CompleteRound()
+{
+    if (!IsRoundActive || OngameOver) return;
+
+    IsRoundActive = false;
+    SetGamePaused(true); // Game pause
+    OnRoundEnd?.Invoke(currentRound);
+
+    if (!ValidateNextRound())
+    {
+        await TriggerGameComplete(); // Game clear
+        return;
+    }
+
+    ShowUpgradeScreen(); // Show upgrade UI
+}
+```
+
+</details>
+
 ### 2.2 게임 타이머 ([GameTimer.cs](Contents/RoundSystem/GameTimer.cs))
 각 라운드의 제한 시간을 관리합니다.
 *   **동작 방식**: `RoundSystem`에 의해 시작/정지되며, `Update` 문에서 시간을 체크합니다.
@@ -40,12 +77,58 @@
 *   **SpawnOperation**: [어떤 적]을, [몇 마리], [몇 초 간격]으로 소환할지 정의합니다.
 *   **동적 스폰 포인트**: 맵의 바닥(`Renderer.bounds`)을 격자(Grid)로 나누어 안전한 스폰 위치를 계산합니다.
 
+<details>
+<summary>📄 EnemySpawnBase.cs 코드 확인하기</summary>
+
+```csharp
+// EnemySpawnBase.cs
+private List<Vector3> GenerateSpawnPoints(GameObject floorObject, int gridX, int gridZ, float margin)
+{
+    // ... (Renderer bounds check) ...
+    // 바운드 내에서 gridX * gridZ 만큼의 포인트를 계산하여 반환
+    for (int z = 0; z < gridZ; z++) {
+        for (int x = 0; x < gridX; x++) {
+            // ... (Calculate safe position) ...
+            points.Add(point);
+        }
+    }
+    return points;
+}
+```
+
+</details>
+
 ### 3.2 적 상태 관리 (State Management)
 적은 다양한 상태를 통해 피격 반응과 군중 제어(CC)를 구현합니다.
 *   **피격 (Hit Stun)**: 피격 시 일시적으로 이동을 멈춤 (`StartHitStun`).
 *   **석화 (Petrify)**: 행동 정지 + 외형 변화 (Y축 스케일 조정).
 *   **넉백 (Knockback)**: 물리 엔진(`Rigidbody`)을 활성화하여 밀려나는 연출.
 *   **슬로우 (Slow)**: 이동/애니메이션 속도 감소.
+
+<details>
+<summary>📄 Enemy.cs 코드 확인하기</summary>
+
+```csharp
+// Enemy.cs
+public void OnHit(float damage)
+{
+    // ... (Damage calculation) ...
+    HitFlashEffect.TriggerFlash(gameObject, HIT_FLASH_DURATION, Color.white);
+    
+    if (damageType == "Normal" || damageType == "Thunder")
+    {
+        StartHitStun(); // 피격 시 경직
+    }
+}
+
+public void StartHitStun()
+{
+    if (isHitStunned || isPetrified || isKnockedBack) return;
+    StartCoroutine(HitStunCoroutine());
+}
+```
+
+</details>
 
 ---
 
@@ -64,6 +147,35 @@
 *   **체력 증가**: [PlayerReward.cs](Contents/Player/PlayerReward.cs)에서 레벨업 시 플레이어의 최대 체력을 즉시 증가시킵니다.
 *   **랜덤 아이템 박스**: [LevelUpRewardItem.cs](Contents/Items/LevelUpRewardItem.cs)를 통해 맵의 지정된 위치 중 한 곳에 **랜덤 아이템 박스**가 생성됩니다. 플레이어는 이를 획득하여 글로벌 아이템(God, Fever 등)이나 추가 자원을 얻을 수 있습니다.
 
+<details>
+<summary>📄 LevelUpItemSpawner 코드는 LevelUpRewardItem.cs 참조</summary>
+
+```csharp
+// LevelUpItemSpawner.cs
+public async UniTaskVoid SpawnLevelUpRewards()
+{
+    // ... (Validation) ...
+    int actualCount = Mathf.Min(rewardCount, availablePoints.Count);
+
+    for (int i = 0; i < actualCount; i++)
+    {
+        // 랜덤 위치 선정
+        int randomIndex = Random.Range(0, availablePoints.Count);
+        Transform spawnPoint = availablePoints[randomIndex];
+        availablePoints.RemoveAt(randomIndex);
+
+        // 보상 프리팹 생성
+        var rewardPrefab = await AbHelper.Shared.LoadAssetAsync<GameObject>(PentaConst.kGLevelUpReward);
+        if (rewardPrefab != null)
+        {
+            Instantiate(rewardPrefab, spawnPoint.position, rewardPrefab.transform.rotation);
+        }
+    }
+}
+```
+
+</details>
+
 ### 4.3 글로벌 아이템 ([GlobalItem.cs](Contents/Items/GlobalItem.cs))
 전투 중 사용하여 전황을 바꾸는 특수 스킬입니다.
 *   **종류**: God(전체 정지), Fever(무적/공격), Haste(이속 증가), Meteors(광역 공격) 등.
@@ -74,27 +186,23 @@
 
 ```csharp
 // GlobalItem.cs
-public IEnumerator Co_PlayerGod(bool _islevelupreward = false)
+public IEnumerator Co_PlayerGod()
 {
-    if (!_islevelupreward) ReduceItemCount(ItemType.God);
-    IsSkillIcon.Shared.OnCreatePlayerIcon(PentaConst.KGIconGod).Forget();
-    AudioManager.Shared.PlaySfx(AudioConst.GLOBAL_ITEM_GOD,2f);
+    // ... (Cooldown check) ...
     
-    // ... (중략) ...
-
-    // Enemy 타입 적들 멈춤
+    // 모든 적 멈춤
     foreach (var enemy in FindObjectsOfType<Enemy>())
     {
-        if (enemy != null && enemy.gameObject != null)
-        {
-            enemy.SetBehaviourStop();
-            // ...
-        }
+        enemy.SetBehaviourStop();
     }
 
     yield return new WaitForSeconds(waitTimeforEnemyGod);
 
-    // ... (적 행동 재개) ...
+    // 적 행동 재개
+    foreach (var enemy in FindObjectsOfType<Enemy>())
+    {
+        enemy.ResumBehaviour();
+    }
 }
 ```
 
@@ -115,8 +223,7 @@ public IEnumerator Co_PlayerGod(bool _islevelupreward = false)
 <summary>📄 UserData.cs (StageData 구조) 코드 확인하기</summary>
 
 ```csharp
-// UserData.cs에 포함된 StageData
-[Serializable]
+// 저장되는 데이터 구조
 public class StageData
 {
     public int Round;       // 도달한 라운드
@@ -140,6 +247,35 @@ public class StageData
 *   **실시간 차감**: [GlobalItem.cs](Contents/Items/GlobalItem.cs)을 사용하여 아이템 개수가 줄어들면, 즉시 `UserDataManager.UpdateUserDataAsync()`가 호출되어 로컬 및 DB에 반영됩니다.
 *   **이유**: 게임 강제 종료 등으로 인해 사용한 아이템이 복구되거나 소모되지 않는 어뷰징을 방지하기 위함입니다.
 *   **구조**: [UserData.cs](UserData/UserData.cs)의 `ItemData` (JSON) -> `ModifyItemCount` -> `Auto Save`
+
+<details>
+<summary>📄 GlobalItem.cs (아이템 사용 및 저장) 코드 확인하기</summary>
+
+```csharp
+// GlobalItem.cs
+public int ReduceItemCount(ItemType reduceItemType, int reduceCount = 1)
+{
+    // ... (Validation & Local deduction) ...
+
+    // 영구 아이템 차감 시 즉시 저장
+    if (remainingToReduce > 0 && userDataItemCount > 0)
+    {
+        bool success = UserItem.UseItem(reduceItemType, permanentReduceCount);
+        
+        if (success)
+        {
+            // ===== DB 동기화 (영구 아이템 차감 시에만) =====
+            if (UserDataManager.Shared != null)
+            {
+                UserDataManager.Shared.UpdateUserDataAsync().Forget(); // 비동기 저장
+                UserDataManager.Shared.NotifyDataUpdated(); // UI 갱신
+            }
+        }
+    }
+}
+```
+
+</details>
 
 ---
 
