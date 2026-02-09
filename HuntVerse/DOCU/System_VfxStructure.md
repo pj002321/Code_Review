@@ -23,14 +23,14 @@
 이 시스템은 **데이터 기반(Data-Driven)** 접근 방식과 **전용 에디터**를 통해 위 문제들을 해결했습니다.
 
 1.  **시각적 에디터 (Visual Editor)**:
-    *   `HuntPresetEditor`를 통해 애니메이션 타임라인을 슬라이더로 조절하며 **즉시 미리보기(Preview)** 가 가능합니다.
+    *   [HuntPresetEditor](../Tool/FXPreset/Editor/HuntPresetEditor.cs)를 통해 애니메이션 타임라인을 슬라이더로 조절하며 **즉시 미리보기(Preview)** 가 가능합니다.
     *   게임을 실행하지 않고도 이펙트와 사운드의 싱크를 정확하게 맞출 수 있습니다.
 2.  **데이터의 중앙화 (Centralized Data)**:
-    *   모든 연출 데이터가 `CharacterFxPreset` (ScriptableObject)에 모여 있어 관리가 용이합니다.
+    *   모든 연출 데이터가 [CharacterFxPreset](../Tool/FXPreset/Editor/CharacterFxPreset.cs) (ScriptableObject)에 모여 있어 관리가 용이합니다.
     *   애니메이션 클립 원본을 수정하지 않으므로 버전 관리(SVN/Git) 충돌이 줄어듭니다.
 3.  **타입 안전성 및 자동화**:
     *   문자열 입력 대신 `VfxType` (Enum)등 Vfx,Sfx 의 타입을 드랍다운으로 선택하여 오타 실수를 방지합니다.
-    *   `VfxManager`가 내부적으로 오브젝트 풀링(Object Pooling)을 자동 처리합니다.
+    *   [VfxManager](../Service/Manage/VfxManager.cs)가 내부적으로 오브젝트 풀링(Object Pooling)을 자동 처리합니다.
 
 ---
 
@@ -51,15 +51,15 @@ graph TD
 ```
 
 ### 핵심 구성 요소
-1. **Data (`CharacterFxPreset.cs`)**: 어떤 애니메이션의 몇 초에, 어떤 이펙트/소리를 낼지 정의하는 데이터.
-2. **Tool (`HuntPresetEditor.cs`)**: 개발자가 이 데이터를 쉽게 입력하도록 돕는 유니티 에디터 창. (타임라인 프리뷰 기능 제공)
-3. **Service (`VfxManager.cs`)**: 실제 이펙트 오브젝트(GameObject)를 로드하고, 생성하고, 재사용(Object Pooling)하는 매니저.
+1. **Data ([CharacterFxPreset.cs](../Tool/FXPreset/Editor/CharacterFxPreset.cs))**: 어떤 애니메이션의 몇 초에, 어떤 이펙트/소리를 낼지 정의하는 데이터.
+2. **Tool ([HuntPresetEditor.cs](../Tool/FXPreset/Editor/HuntPresetEditor.cs))**: 개발자가 이 데이터를 쉽게 입력하도록 돕는 유니티 에디터 창. (타임라인 프리뷰 기능 제공)
+3. **Service ([VfxManager.cs](../Service/Manage/VfxManager.cs))**: 실제 이펙트 오브젝트(GameObject)를 로드하고, 생성하고, 재사용(Object Pooling)하는 매니저.
 
 ---
 
 ## 2. 파일별 상세 분석 및 코드 콜아웃
 
-### A. 데이터 정의: `CharacterFxPreset.cs`
+### A. 데이터 정의: [CharacterFxPreset.cs](../Tool/FXPreset/Editor/CharacterFxPreset.cs)
 애니메이션 클립별로 FX 타이밍을 저장하는 ScriptableObject입니다.
 
 > **핵심 역할**: 애니메이션 이름(`clipName`)과 타이밍(`FxTiming`) 매핑.
@@ -93,7 +93,7 @@ public class FxTiming
 
 ---
 
-## 3. 에디터 툴: `HuntPresetEditor.cs`
+## 3. 에디터 툴: [HuntPresetEditor.cs](../Tool/FXPreset/Editor/HuntPresetEditor.cs)
 데이터를 직관적으로 편집하기 위해 만든 커스텀 에디터입니다. Odin Inspector를 기반으로 하며, **왼쪽 패널에서 애니메이션을 실시간으로 미리보며 이펙트 타이밍을 설정하는 기능**이 핵심입니다.
 
 > **핵심 기능**: 
@@ -188,7 +188,7 @@ private void AddEventAtCurrentTime()
 
 ## 4. 런타임 컨트롤러
 
-### ActorFxController
+### [ActorFxController](../Tool/FXPreset/ActorFxController.cs)
 
 **개념**: `CharacterFxPreset` 데이터 → `ActorFxController.Update()` → 타이밍 자동 감지 → VFX 재생
 
@@ -202,18 +202,18 @@ private void AddEventAtCurrentTime()
 
 **사용 대상**: **모든 새로운 캐릭터**
 
-### 런타임 동작 플로우 (ActorFxController)
+### 런타임 동작 플로우 ([ActorFxController](../Tool/FXPreset/ActorFxController.cs))
 
-1. 캐릭터 프리팹에 `ActorFxController` 컴포넌트 추가
-2. `ActorFxController.Init(CharacterFxPreset)` 호출 → Preset 로드
+1. 캐릭터 프리팹에 [ActorFxController](../Tool/FXPreset/ActorFxController.cs) 컴포넌트 추가
+2. [ActorFxController](../Tool/FXPreset/ActorFxController.cs).Init(CharacterFxPreset) 호출 → Preset 로드
 3. 게임 플레이 시작 → 캐릭터 애니메이션 재생
-4. `ActorFxController.Update()` → Animator 상태 감시
+4. [ActorFxController](../Tool/FXPreset/ActorFxController.cs).Update() → Animator 상태 감시
 5. 설정된 타이밍 도달 → `VfxManager.PlayOneShot()` 자동 호출
 6. VFX/SFX 화면에 표시 → 완료
 
 ---
 
-## 5. 런타임 매니저: `VfxManager.cs`
+## 5. 런타임 매니저: [VfxManager.cs](../Service/Manage/VfxManager.cs)
 실제로 게임 내에서 이펙트를 출력하는 역할을 합니다. 데이터(`CharacterFxPreset`)를 직접 알지 못하며, **"어떤 키(Key)의 이펙트를 어디(Position)에 틀어라"** 라는 명령만 수행합니다.
 
 > **핵심 기능**: 비동기 로드(UniTask), 오브젝트 풀링(ObjectPool), 부모/위치 설정.
@@ -263,8 +263,8 @@ public async UniTask<VfxHandle> PlayOneShot(string key, Vector3 pos, Quaternion 
 3.  **[Tool]** 애니메이션 클립 선택 및 타임라인 슬라이더 조절 (Preview)
 4.  **[Tool]** 원하는 타이밍(Time)에 `VfxType` / `AudioType` 키 추가 및 저장
 5.  **[Build]** 프리셋 데이터(`CharacterFxPreset`)가 Addressable 그룹에 자동 등록됨
-6.  **[Runtime]** 게임 시작 시 캐릭터에 붙은 `ActorFxController` 초기화
-7.  **[Runtime]** `ActorFxController`가 `CharacterFxPreset` 데이터를 로드하여 캐싱
+6.  **[Runtime]** 게임 시작 시 캐릭터에 붙은 [ActorFxController](../Tool/FXPreset/ActorFxController.cs) 초기화
+7.  **[Runtime]** [ActorFxController](../Tool/FXPreset/ActorFxController.cs)가 `CharacterFxPreset` 데이터를 로드하여 캐싱
 8.  **[Runtime]** 매 프레임(`Update`) 현재 애니메이션 시간과 프리셋 타이밍 비교
 9.  **[Runtime]** 타이밍 일치 시 `VfxManager`에게 `PlayOneShot` 요청 (풀링된 객체 사용)
 10. **[Runtime]** 이펙트 재생 완료 후 자동으로 비활성화 및 풀 반납
