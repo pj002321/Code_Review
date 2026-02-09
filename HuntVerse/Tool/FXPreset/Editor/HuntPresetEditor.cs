@@ -23,14 +23,26 @@ namespace Hunt.Ed
             window.Show();
         }
 
-        #region 에디터 상태
+        #region Editor State
 
         private List<GameObject> _availableActorPrefabs = new List<GameObject>();
 
+        [HideInInspector]
+        private CharacterFxPreset _selectedPreset;
+        
         [ValueDropdown("GetAllPresets")]
         [OnValueChanged("OnPresetSelected")]
         [LabelText("액터 프리셋 선택")]
-        private CharacterFxPreset _selectedPreset;
+        [ShowInInspector]
+        private CharacterFxPreset SelectedPresetProperty
+        {
+            get => _selectedPreset;
+            set
+            {
+                _selectedPreset = value;
+                OnPresetSelected();
+            }
+        }
 
         [ShowInInspector, ReadOnly]
         [LabelText("프리셋 경로")]
@@ -79,6 +91,11 @@ namespace Hunt.Ed
         private float _previewTime;
         private bool _isPlaying;
         private double _lastTime;
+        
+        // Preview Rendering
+        private UnityEditor.PreviewRenderUtility _previewRenderUtility;
+        private static readonly Vector3 PREVIEW_DIR = new Vector3(-0.2f, -0.5f, 1f);
+        private const float PREVIEW_ZOOM = 2.5f;
 
         [ShowIf("CanEditTimeline")]
         [OnInspectorGUI]
@@ -115,25 +132,13 @@ namespace Hunt.Ed
             {
                 AddEventAtCurrentTime();
             }
+            
+            if (_previewInstance != null && GUILayout.Button("Destroy Preview"))
+            {
+                DestroyPreviewInstance();
+            }
 
             GUILayout.EndHorizontal();
-
-            // Preview Area (Simple Label for now, actual preview via scene object)
-            if (_previewInstance == null)
-            {
-                EditorGUILayout.HelpBox("Scene에 미리보기용 캐릭터가 생성됩니다.", MessageType.Info);
-                if (GUILayout.Button("Create Preview Instance"))
-                {
-                    CreatePreviewInstance();
-                }
-            }
-            else
-            {
-                 if (GUILayout.Button("Destroy Preview Instance"))
-                {
-                    DestroyPreviewInstance();
-                }
-            }
 
             GUILayout.EndVertical();
         }
@@ -175,10 +180,13 @@ namespace Hunt.Ed
             if (_selectedPreset?.characterPrefab != null)
             {
                 DestroyPreviewInstance();
+                InitPreviewRenderer();
+                
                 _previewInstance = Instantiate(_selectedPreset.characterPrefab);
                 _previewInstance.name = "[HuntPresetEditor_Preview] " + _selectedPreset.characterPrefab.name;
-                _previewInstance.transform.position = Vector3.zero; // Or specific position
-                _previewInstance.hideFlags = HideFlags.DontSave;
+                _previewInstance.transform.position = Vector3.zero;
+                _previewInstance.hideFlags = HideFlags.HideAndDontSave; // Hide from Scene and don't save
+                
                 SampleAnimation();
             }
         }
@@ -264,18 +272,217 @@ namespace Hunt.Ed
         private void OnDestroy()
         {
             DestroyPreviewInstance();
+            
+            if (_previewRenderUtility != null)
+            {
+                _previewRenderUtility.Cleanup();
+                _previewRenderUtility = null;
+            }
+        }
+        
+        private void InitPreviewRenderer()
+        {
+            if (_previewRenderUtility == null)
+            {
+                _previewRenderUtility = new UnityEditor.PreviewRenderUtility();
+                
+                // Camera setup
+                _previewRenderUtility.camera.transform.position = new Vector3(0, 1, -3);
+                _previewRenderUtility.camera.transform.rotation = Quaternion.identity;
+                _previewRenderUtility.camera.fieldOfView = 60f;
+                _previewRenderUtility.camera.nearClipPlane = 0.1f;
+                _previewRenderUtility.camera.farClipPlane = 100f;
+                _previewRenderUtility.camera.clearFlags = UnityEngine.CameraClearFlags.Skybox;
+                
+                // Lighting setup
+                _previewRenderUtility.lights[0].intensity = 1.4f;
+                _previewRenderUtility.lights[0].type = LightType.Directional;
+                _previewRenderUtility.lights[0].transform.rotation = Quaternion.Euler(40f, 40f, 0);
+                _previewRenderUtility.lights[1].intensity = 0.8f;
+                _previewRenderUtility.lights[1].type = LightType.Directional;
+                _previewRenderUtility.lights[1].transform.rotation = Quaternion.Euler(-10f, -30f, 0);
+                
+                Debug.Log("[HuntPresetEditor] PreviewRenderUtility initialized");
+            }
+        }
+        
+        private void RenderPreview(Rect previewRect)
+        {
+            if (_previewInstance == null || _previewRenderUtility == null) 
+            {
+                Debug.LogWarning("[HuntPresetEditor] Preview instance or render utility is null");
+                return;
+            }
+            
+            // Check if this is a 2D sprite character
+            var spriteRenderers = _previewInstance.GetComponentsInChildren<SpriteRenderer>();
+            if (spriteRenderers.Length > 0 && spriteRenderers[0].sprite != null)
+            {
+                // Render 2D sprite directly
+                Render2DSprite(previewRect, spriteRenderers);
+                return;
+            }
+            
+            // Otherwise, render 3D mesh
+            Render3DMesh(previewRect);
+        }
+        
+        private void Render2DSprite(Rect previewRect, SpriteRenderer[] spriteRenderers)
+        {
+            // Draw a simple background
+            EditorGUI.DrawRect(previewRect, new Color(0.2f, 0.2f, 0.2f));
+            
+            // Find the main sprite renderer (usually the first one)
+            var mainSprite = spriteRenderers[0].sprite;
+            if (mainSprite == null) return;
+            
+            // Calculate sprite rect to fit in preview while maintaining aspect ratio
+            Texture2D spriteTexture = mainSprite.texture;
+            Rect spriteRect = mainSprite.rect;
+            
+            float spriteAspect = spriteRect.width / spriteRect.height;
+            float previewAspect = previewRect.width / previewRect.height;
+            
+            Rect drawRect = previewRect;
+            if (spriteAspect > previewAspect)
+            {
+                // Sprite is wider
+                float height = previewRect.width / spriteAspect;
+                drawRect.y += (previewRect.height - height) / 2;
+                drawRect.height = height;
+            }
+            else
+            {
+                // Sprite is taller
+                float width = previewRect.height * spriteAspect;
+                drawRect.x += (previewRect.width - width) / 2;
+                drawRect.width = width;
+            }
+            
+            // Calculate UV coordinates from sprite rect
+            Rect uv = new Rect(
+                spriteRect.x / spriteTexture.width,
+                spriteRect.y / spriteTexture.height,
+                spriteRect.width / spriteTexture.width,
+                spriteRect.height / spriteTexture.height
+            );
+            
+            // Check if sprite is flipped
+            if (spriteRenderers[0].flipX)
+            {
+                uv.x += uv.width;
+                uv.width = -uv.width;
+            }
+            
+            // Draw the sprite
+            GUI.DrawTextureWithTexCoords(drawRect, spriteTexture, uv);
+        }
+        
+        private void Render3DMesh(Rect previewRect)
+        {
+            _previewRenderUtility.BeginPreview(previewRect, GUIStyle.none);
+            
+            // Position camera to frame character
+            Bounds bounds = GetBounds(_previewInstance);
+            float dist = bounds.size.magnitude * PREVIEW_ZOOM;
+            Vector3 cameraPos = bounds.center - PREVIEW_DIR.normalized * dist;
+            
+            _previewRenderUtility.camera.transform.position = cameraPos;
+            _previewRenderUtility.camera.transform.LookAt(bounds.center);
+            
+            // Manually draw all renderers
+            var renderers = _previewInstance.GetComponentsInChildren<Renderer>();
+            int drawnMeshCount = 0;
+            
+            foreach (var renderer in renderers)
+            {
+                if (renderer != null && renderer.enabled)
+                {
+                    Mesh mesh = GetMeshFromRenderer(renderer);
+                    if (mesh != null)
+                    {
+                        for (int i = 0; i < renderer.sharedMaterials.Length; i++)
+                        {
+                            if (renderer.sharedMaterials[i] != null)
+                            {
+                                _previewRenderUtility.DrawMesh(
+                                    mesh,
+                                    renderer.transform.localToWorldMatrix,
+                                    renderer.sharedMaterials[i],
+                                    i
+                                );
+                                drawnMeshCount++;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (drawnMeshCount == 0)
+            {
+                Debug.LogWarning($"[HuntPresetEditor] No meshes drawn! Renderer count: {renderers.Length}");
+            }
+            
+            // Render
+            _previewRenderUtility.camera.Render();
+            
+            Texture resultTexture = _previewRenderUtility.EndPreview();
+            GUI.DrawTexture(previewRect, resultTexture, ScaleMode.ScaleToFit, false);
+        }
+        
+        private Mesh GetMeshFromRenderer(Renderer renderer)
+        {
+            // Skip SpriteRenderer (2D sprites can't be rendered with DrawMesh)
+            if (renderer is SpriteRenderer)
+            {
+                return null; // Silently skip, not an error
+            }
+            
+            if (renderer is MeshRenderer meshRenderer)
+            {
+                var meshFilter = meshRenderer.GetComponent<MeshFilter>();
+                var mesh = meshFilter != null ? meshFilter.sharedMesh : null;
+                if (mesh == null)
+                {
+                    Debug.LogWarning($"[HuntPresetEditor] MeshRenderer has no mesh: {renderer.name}");
+                }
+                return mesh;
+            }
+            else if (renderer is SkinnedMeshRenderer skinnedMeshRenderer)
+            {
+                if (skinnedMeshRenderer.sharedMesh == null)
+                {
+                    Debug.LogWarning($"[HuntPresetEditor] SkinnedMeshRenderer has no sharedMesh: {renderer.name}");
+                    return null;
+                }
+                
+                // For SkinnedMeshRenderer, we need to bake the current pose
+                Mesh bakedMesh = new Mesh();
+                skinnedMeshRenderer.BakeMesh(bakedMesh);
+                Debug.Log($"[HuntPresetEditor] Baked mesh for {renderer.name}, vertices: {bakedMesh.vertexCount}");
+                return bakedMesh;
+            }
+            
+            Debug.LogWarning($"[HuntPresetEditor] Unsupported renderer type: {renderer.GetType().Name} on {renderer.name}");
+            return null;
+        }
+        
+        private Bounds GetBounds(GameObject go)
+        {
+            var renderers = go.GetComponentsInChildren<Renderer>();
+            if (renderers.Length > 0)
+            {
+                Bounds bounds = renderers[0].bounds;
+                for (int i = 1; i < renderers.Length; i++)
+                    bounds.Encapsulate(renderers[i].bounds);
+                return bounds;
+            }
+            return new Bounds(go.transform.position, Vector3.one);
         }
 
         #endregion
 
-        #region 레이아웃
-
-        [HorizontalGroup("Main", Width = 300)]
-        [VerticalGroup("Main/Left")]
-        [PreviewField(300, ObjectFieldAlignment.Center)]
-        [HideLabel]
-        [ShowInInspector]
-        private Sprite PreviewSprite => _selectedPreset != null ? _selectedPreset.previewSprite : null;
+        #region LayOut
 
         [VerticalGroup("Main/Left")]
         [Button(ButtonSizes.Large), GUIColor(0.2f, 0.5f, 0.8f)]
@@ -328,6 +535,29 @@ namespace Hunt.Ed
             }
         }
 
+        [HorizontalGroup("Main", Width = 300)]
+        [VerticalGroup("Main/Left")]
+        [OnInspectorGUI]
+        private void DrawLeftPanelPreview()
+        {
+            // Auto-create preview instance if clip is selected but instance doesn't exist
+            if (_currentClip != null && _previewInstance == null)
+            {
+                CreatePreviewInstance();
+            }
+            
+            if (_previewInstance != null && _previewRenderUtility != null)
+            {
+                Rect previewRect = GUILayoutUtility.GetRect(300, 300);
+                RenderPreview(previewRect);
+            }
+            else if (_selectedPreset != null)
+            {
+                EditorGUILayout.HelpBox("클립을 선택하세요.", MessageType.Info);
+                GUILayoutUtility.GetRect(300, 60); // Reserve space
+            }
+        }
+        
         [VerticalGroup("Main/Right")]
         [ShowIf("_selectedPreset")]
         [InlineEditor(InlineEditorObjectFieldModes.Hidden)]
@@ -471,7 +701,7 @@ namespace Hunt.Ed
 
         #endregion
 
-        #region 헬퍼
+        #region Helper
 
         private IEnumerable<CharacterFxPreset> GetAllPresets()
         {
