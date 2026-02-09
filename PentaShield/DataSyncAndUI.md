@@ -6,8 +6,8 @@
 
 ### 현상
 *   게임 내 활동(상점 구매, 아이템 획득 등)으로 인해 사용자 데이터(`UserData`)가 변경됩니다.
-*   데이터 변경 후 **저장(I/O)**과 **UI 갱신**이 필요합니다.
-*   저장 작업(로컬 파일 암호화/쓰기 + Firebase 네트워크 통신)은 시간이 소요되는 **비동기 작업**입니다.
+*   데이터 변경 후 저장(I/O)과 UI 갱신이 필요합니다.
+*   저장 작업(로컬 파일 암호화/쓰기 + Firebase 네트워크 통신)은 시간이 소요되는 비동기 작업입니다.
 
 ### 문제점
 1.  **UI 반응성 저하**: 저장이 완료될 때까지 기다렸다가 UI를 갱신하면 게임이 멈추거나 반응이 느려집니다.
@@ -21,9 +21,8 @@
 ### 핵심 아키텍처: Observer Pattern & Async Queue
 데이터 변경과 저장을 분리하고, 이벤트 기반으로 UI를 동기화하여 문제를 해결했습니다.
 
-1.  **단일 진실 공급원 (Single Source of Truth)**: [UserDataManager.cs](UserData/UserDataManager.cs)가 관리하는 [UserData.cs](UserData/UserData.cs) 객체가 유일한 원본입니다.
-2.  **Observer Pattern (UI 동기화)**: 데이터가 변경되면 `OnDataUpdated` 이벤트를 발행합니다. UI들은 이 이벤트를 구독하고 있다가, 이벤트 발생 시 즉시 자신의 최신 상태로 갱신합니다.
-3.  **비동기 저장 큐 (Async Save Queue)**: 저장 요청은 `SaveRequest`로 캡슐화되어 큐(`Queue`)에 쌓이고, 별도의 비동기 루프(`ProcessSaveQueue`)에서 순차적으로 처리됩니다.
+1.  **Observer Pattern (UI 동기화)**: 데이터가 변경되면 `OnDataUpdated` 이벤트를 발행합니다. UI들은 이 이벤트를 구독하고 있다가, 이벤트 발생 시 즉시 자신의 최신 상태로 갱신합니다.
+2.  **비동기 저장 큐 (Async Save Queue)**: 저장 요청은 `SaveRequest`로 캡슐화되어 큐(`Queue`)에 쌓이고, 별도의 비동기 루프(`ProcessSaveQueue`)에서 순차적으로 처리됩니다.
 
 ---
 
