@@ -44,13 +44,10 @@ graph TD
     Editor[HuntPresetEditor.cs] -->|편집 & 저장| Data[CharacterFxPreset.cs]
     
     %% Runtime Layer
-    subgraph InGame [인게임 런타임]
-        Actor[ActorFxController] -->|참조| Data
-        Actor -->|애니메이션 상태 감지| Animator
-        Actor -->|VFX 생성 요청| Manager[VfxManager.cs]
-        
-        Manager -->|프리팹 로드 & 풀링| VfxObject[VfxObject (Pool)]
-    end
+    Data -->|참조| Actor[ActorFxController]
+    Actor -->|애니메이션 상태 감지| Animator[Animator]
+    Actor -->|VFX 생성 요청| Manager[VfxManager.cs]
+    Manager -->|프리팹 로드 & 풀링| VfxObject["VfxObject (Pool)"]
 ```
 
 ### 핵심 구성 요소
@@ -176,6 +173,16 @@ private void AddEventAtCurrentTime()
 5. 타임라인 슬라이더 → 원하는 타이밍으로 이동
 6. Add Event Here → VFX Type, Audio Type 설정
 7. Save Preset → 완료
+
+### HuntPresetEditor UI 스크린샷
+
+![HuntPresetEditor UI](C:\Users\JaeSeong\.gemini\antigravity\brain\92459374-d294-4dc1-a836-bb87419bcd2c\huntpreset_editor_ui.png)
+
+**UI 구성 요소**:
+- **왼쪽 패널**: 실시간 캐릭터 애니메이션 미리보기 (2D/3D 자동 감지)
+- **오른쪽 상단**: 액터 프리셋 선택 및 클립 목록
+- **오른쪽 중앙**: 각 클립의 FX 타이밍 설정 (Time, VfxType, AudioType, Attach Hit)
+- **하단**: 애니메이션 타임라인 슬라이더 (Play/Pause, Add Event Here 버튼)
 
 ---
 
