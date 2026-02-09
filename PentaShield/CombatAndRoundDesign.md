@@ -70,7 +70,7 @@ private async UniTask CompleteRound()
 
 ---
 
-## 3. 적 스폰 및 상태 관리 (Enemy Spawn & State)
+## 3. 적 상태 관리 (State)
 
 ### 적 상태 관리 (State Management)
 적은 다양한 상태를 통해 피격 반응과 군중 제어(CC)를 구현합니다.
