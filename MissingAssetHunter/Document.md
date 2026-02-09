@@ -10,7 +10,8 @@ MissingAssetHunter는 Unity 프로젝트에서 누락되거나 손상된 에셋�
 
 ## 📁 코드 구조
 
-### 1. BaseFinderBehaviour.cs (728 lines)
+### 1. [BaseFinderBehaviour.cs](BaseFinderBehaviour.cs) (728 lines)
+> **핵심 역할**: Finder 클래스들의 부모 클래스로, 공통 UI 렌더링(스타일, 버튼, 레이아웃) 및 검색 기본 로직을 제공합니다.
 모든 Finder 클래스의 기본이 되는 추상 클래스입니다.
 
 **주요 기능:**
@@ -27,6 +28,7 @@ MissingAssetHunter는 Unity 프로젝트에서 누락되거나 손상된 에셋�
 
 **핵심 UI 컴포넌트:**
 ```csharp
+// [BaseFinderBehaviour.cs]
 - DrawTitle(): 헤더 타이틀 렌더링
 - DrawSearchArea(): 검색 타겟 선택 영역
 - DrawResultsArea(): 검색 결과 표시 영역
@@ -35,13 +37,15 @@ MissingAssetHunter는 Unity 프로젝트에서 누락되거나 손상된 에셋�
 
 ---
 
-### 2. MissingScriptFinder.cs (246 lines)
+### 2. [MissingScriptFinder.cs](MissingScriptFinder.cs) (246 lines)
+> **핵심 역할**: GameObject에 연결된 스크립트 중 누락된(Missing) 스크립트나 손상된 프리팹 인스턴스를 감지합니다.
 누락되거나 손상된 스크립트 컴포넌트를 찾는 핵심 로직입니다.
 
 **핵심 검사 알고리즘:**
 
 #### ① Fake Null 검출
 ```csharp
+// [MissingScriptFinder.cs]
 Component[] components = obj.GetComponents<Component>();
 for (int i = 0; i < components.Length; i++)
 {
@@ -72,7 +76,8 @@ for (int i = 0; i < components.Length; i++)
 
 ---
 
-### 3. MissingMaterialFinder.cs (506 lines)
+### 3. [MissingMaterialFinder.cs](MissingMaterialFinder.cs) (506 lines)
+> **핵심 역할**: 렌더러의 재질(Material), 쉐이더(Shader), 컴파일 오류, 텍스처 누락 등을 검사합니다.
 누락되거나 손상된 Material 및 Shader를 찾는 클래스입니다.
 
 **검사 대상 Renderer:**
@@ -87,6 +92,7 @@ for (int i = 0; i < components.Length; i++)
 
 #### ① Material 검증
 ```csharp
+// [MissingMaterialFinder.cs]
 - Material이 null인 경우
 - Error Material 상태 확인 (Magenta Material)
 - Material 경로 유효성 검사
@@ -114,13 +120,15 @@ for (int i = 0; i < components.Length; i++)
 
 ---
 
-### 4. MissingPrefabFinder.cs (189 lines)
+### 4. [MissingPrefabFinder.cs](MissingPrefabFinder.cs) (189 lines)
+> **핵심 역할**: 원본 에셋이 삭제되었거나 연결이 끊어진(Broken) 프리팹 인스턴스를 찾아냅니다.
 손상되거나 연결이 끊어진 Prefab을 찾는 클래스입니다.
 
 **검사 항목:**
 
 #### ① Prefab Asset Missing
 ```csharp
+// [MissingPrefabFinder.cs]
 if (PrefabUtility.IsPrefabAssetMissing(obj))
 {
     // 프리팹 에셋 파일이 삭제된 경우
@@ -142,7 +150,8 @@ if (prefabAsset == null)
 
 ---
 
-### 5. PrefabAnalyzer.cs (1695 lines)
+### 5. [PrefabAnalyzer.cs](PrefabAnalyzer.cs) (1695 lines)
+> **핵심 역할**: 프리팹의 의존성(스크립트, 에셋), 성능 지표(Vertex 수 등), 잠재적 이슈를 심층 분석합니다.
 프리팹을 심층 분석하여 의존성, 최적화, 문제점을 찾는 클래스입니다.
 
 **분석 모드:**
@@ -189,7 +198,8 @@ if (prefabAsset == null)
 
 ---
 
-### 6. SceneAnalyzer.cs (1348 lines)
+### 6. [SceneAnalyzer.cs](SceneAnalyzer.cs) (1348 lines)
+> **핵심 역할**: 씬 전체를 스캔하여 오브젝트 통계, 라이팅/환경 설정 정보, 각종 에셋 에러를 종합적으로 분석합니다.
 씬 전체를 분석하여 GameObject, 환경 설정, 에러를 찾는 클래스입니다.
 
 **분석 카테고리:**
@@ -248,12 +258,14 @@ Post Processing:
 
 ---
 
-### 7. SceneAnalyzer.Data.cs (180 lines)
+### 7. [SceneAnalyzer.Data.cs](SceneAnalyzer.Data.cs) (180 lines)
+> **핵심 역할**: 분석된 씬 데이터(오브젝트, 환경, 에러)를 직렬화하여 저장하기 위한 데이터 구조(Class/Struct)를 정의합니다.
 씬 분석 결과를 저장하는 데이터 구조 정의입니다.
 
 **주요 데이터 클래스:**
 
 ```csharp
+// [SceneAnalyzer.Data.cs]
 SceneAnalysisResult
     ├── 씬 기본 정보 (이름, 경로, 분석 시간)
     ├── 통계 (오브젝트 수, 컴포넌트 수, 에러 수)
