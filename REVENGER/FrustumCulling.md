@@ -7,7 +7,7 @@ Frustum Culling(절두체 컬링)은 카메라 시야(Frustum) 밖에 있는 객
 ## 1. Frustum Generation (`Camera.cpp`)
 *   **GenerateFrustum**: 투영 행렬(`Projection Matrix`)을 기반으로 Frustum을 생성하고, 뷰 행렬(`View Matrix`)의 역행렬을 사용하여 월드 공간으로 변환합니다.
 
-<details>
+<details open>
 <summary>Click to view code: GenerateFrustum</summary>
 
 ```cpp
@@ -23,7 +23,7 @@ void CCamera::GenerateFrustum()
 ## 2. Intersection Check (`Camera.cpp`)
 *   **IsInFrustum**: DirectXMath의 `BoundingFrustum::Intersects` 함수를 사용하여 Bounding Box가 Frustum 내부에 있는지 판별합니다.
 
-<details>
+<details open>
 <summary>Click to view code: IsInFrustum</summary>
 
 ```cpp
@@ -38,7 +38,7 @@ bool CCamera::IsInFrustum(BoundingBox& xmBoundingBox)
 *   **IsVisible**: 객체의 Bounding Box를 월드 공간으로 변환한 후, 카메라의 `IsInFrustum`을 호출하여 가시성을 확인합니다.
 *   *Note*: 현재 코드베이스에서 `IsVisible` 함수는 구현되어 있으나, 메인 렌더링 루프에서 직접적으로 호출되어 사용되고 있지는 않은 것으로 파악됩니다.
 
-<details>
+<details open>
 <summary>Click to view code: IsVisible</summary>
 
 ```cpp

@@ -23,7 +23,7 @@ HuntVerse의 그림자 렌더링 시스템은 **Shadow Mapping** 기법을 사�
         *   `Render` 함수를 호출하여 씬의 객체들을 그립니다.
         *   이때 셰이더는 `VSlighting`과 `PSDepthWriteShader`를 사용합니다.
 
-<details>
+<details open>
 <summary>Click to view code: CDepthRenderShader::PrepareShadowMap</summary>
 
 ```cpp
@@ -79,7 +79,7 @@ void CDepthRenderShader::PrepareShadowMap(ID3D12GraphicsCommandList* pd3dCommand
     *   `SV_Target` (Red Channel)과 `SV_Depth`에 깊이 값을 기록합니다.
     *   `output.fzPosition = input.position.z;`
 
-<details>
+<details open>
 <summary>Click to view code: VSLighting & PSDepthWriteShader</summary>
 
 ```hlsl
@@ -119,7 +119,7 @@ PS_DEPTH_OUTPUT PSDepthWriteShader(VS_LIGHTING_OUTPUT input)
 ### 2.1 Vertex Shader (`Shaders.hlsl`)
 *   씬 렌더링 시(`VSStandard` 등), 월드 좌표(`positionW`)를 각 조명의 텍스처 공간(Shadow Map UV)으로 변환합니다.
 
-<details>
+<details open>
 <summary>Click to view code: VSStandard (Shadow Loop)</summary>
 
 ```hlsl
@@ -138,7 +138,7 @@ PS_DEPTH_OUTPUT PSDepthWriteShader(VS_LIGHTING_OUTPUT input)
     *   `SampleCmpLevelZero`를 사용하여 하드웨어 비교 샘플링을 수행합니다.
     *   주변 9개 샘플(3x3)을 평균내어 `fShadowFactor`(그림자 계수 0.0~1.0)를 반환합니다.
 
-<details>
+<details open>
 <summary>Click to view code: Compute3x3ShadowFactor</summary>
 
 ```hlsl
@@ -161,7 +161,7 @@ float Compute3x3ShadowFactor(float2 uv, float fDepth, uint nIndex)
 *   계산된 `fShadowFactor`를 Diffuse 및 Specular 조명 계산에 곱해줍니다.
 *   그림자가 있는 곳(`fShadowFactor < 1.0`)은 빛의 영향이 줄어들어 어둡게 렌더링됩니다.
 
-<details>
+<details open>
 <summary>Click to view code: Lighting Function</summary>
 
 ```hlsl
