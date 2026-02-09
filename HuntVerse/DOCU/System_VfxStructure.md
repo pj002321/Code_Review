@@ -176,7 +176,7 @@ private void AddEventAtCurrentTime()
 
 ### HuntPresetEditor UI 스크린샷
 
-![HuntPresetEditor UI](C:\Users\JaeSeong\.gemini\antigravity\brain\92459374-d294-4dc1-a836-bb87419bcd2c\huntpreset_editor_ui.png)
+![HuntPresetEditor UI](C:\Users\JaeSeong\Desktop\Code_Review\HuntVerse\DOCU\PNG\tool_preset.jpg)
 
 **UI 구성 요소**:
 - **왼쪽 패널**: 실시간 캐릭터 애니메이션 미리보기 (2D/3D 자동 감지)
