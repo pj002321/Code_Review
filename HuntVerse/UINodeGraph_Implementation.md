@@ -67,6 +67,18 @@ public class UIGraphExecutionStep
 
 ### 2.2 Runtime Components
 *   **`UIGraphBakedEvent`**: Bake 시점에 버튼에 자동 추가됩니다. 버튼 클릭 시 `UIManager`를 통해 그래프 실행을 트리거합니다.
+
+```csharp
+// UIGraphBakedEvent.cs
+public void OnButtonClick()
+{
+    // ... 유효성 검사 생략
+    
+    // UIManager에 그래프 실행 요청 (Fire & Forget)
+    UIManager.Shared.ExecuteGraphFromNode(_graph, _startNodeGuid).Forget();
+}
+```
+
 *   **`UIGraphTarget`**: 그래프에서 참조하는 GameObject에 자동 추가되며, GUID 기반의 고유 식별자를 제공하여 씬 로드/언로드 시에도 객체를 다시 찾을 수 있게 합니다.
 
 ### 2.3 Editor Tool
@@ -81,6 +93,23 @@ public class UIGraphExecutionStep
 ## 3. 노드 타입 (Node Types)
 
 각 노드는 `UINode`를 상속받으며, `CreateExecutionStep`을 통해 런타임 데이터로 변환됩니다.
+
+```csharp
+// Example: ExecuteMethodNode.cs
+public override UIGraphExecutionStep CreateExecutionStep(UINodeGraph graph)
+{
+    var step = new UIGraphExecutionStep { nodeType = UINodeType.ExecuteMethod, nodeGuid = guid };
+    
+    // 런타임에 오브젝트를 찾기 위해 TargetID 사용
+    if (targetObject != null && graph != null)
+    {
+        step.gameObjectIds = new[] { graph.GetOrCreateTargetId(targetObject) };
+        step.stringParams.Add("componentType", componentTypeName ?? "");
+        step.stringParams.Add("methodName", methodName ?? "");
+    }
+    return step;
+}
+```
 
 | 노드 타입 | 기능 | 파라미터 |
 | :--- | :--- | :--- |
