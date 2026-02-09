@@ -1,30 +1,17 @@
-# Shadow Rendering System Documentation
+# Shadow Rendering Documentation
 
 ## Overview
-HuntVerse의 그림자 렌더링 시스템은 **Shadow Mapping** 기법을 사용하며, Directional, Point, Spot Light에 대한 그림자를 지원합니다.
-구현은 크게 두 단계로 나뉩니다:
-1. **Shadow Map Generation (Depth Pass)**: 빛의 시점에서 깊이(Depth) 정보를 텍스처에 기록합니다.
-2. **Shadow Application (Lighting Pass)**: 렌더링 시 Shadow Map을 샘플링하여 그림자 여부를 판단하고 적용합니다.
+HuntVerse의 렌더링 최적화 및 그림자 시스템에 대한 문서입니다.
 
-## 1. Shadow Map Generation (Depth Pass)
+---
 
-### 1.1 C++ Implementation (`ShadowShader.cpp`)
-*   **Class**: `CDepthRenderShader`
-*   **Role**: 그림자 맵(Depth Map) 생성을 담당합니다.
-*   **Key Process (`PrepareShadowMap`)**:
-    1.  활성화된 모든 조명(`MAX_LIGHTS`)을 순회합니다.
-    2.  각 조명의 View, Projection Matrix를 계산합니다.
-        *   **Directional Light**: `XMMatrixOrthographicLH` (직교 투영) 사용.
-        *   **Spot Light**: 코드상으로는 `XMMatrixOrthographicLH`를 사용 중 (Perspective 투영 주석 처리됨).
-    3.  **Render Target 설정**:
-        *   `m_pDepthTexture` (Texture Array)의 해당 인덱스를 Render Target으로 설정합니다.
-        *   Format: `DXGI_FORMAT_R32_FLOAT` (Color), `DXGI_FORMAT_D32_FLOAT` (Depth).
-    4.  **객체 렌더링**:
-        *   `Render` 함수를 호출하여 씬의 객체들을 그립니다.
-        *   이때 셰이더는 `VSlighting`과 `PSDepthWriteShader`를 사용합니다.
+## 1. Shadow Rendering System
 
-<details open>
-<summary> CDepthRenderShader::PrepareShadowMap</summary>
+### 1.1 Shadow Map Generation (Depth Pass)
+**Role**: `CDepthRenderShader` (C++)가 담당하며, 조명 시점에서 깊이 정보를 기록합니다.
+
+<details>
+<summary>CDepthRenderShader::PrepareShadowMap</summary>
 
 ```cpp
 void CDepthRenderShader::PrepareShadowMap(ID3D12GraphicsCommandList* pd3dCommandList)
@@ -71,16 +58,8 @@ void CDepthRenderShader::PrepareShadowMap(ID3D12GraphicsCommandList* pd3dCommand
 ```
 </details>
 
-### 1.2 Shader Implementation (`Shadow.hlsl`)
-*   **Vertex Shader (`VSLighting`)**:
-    *   기본적인 World-View-Projection 변환을 수행합니다.
-    *   Bone Animation이 있는 경우(`gbBoneShader`) 스킨 변환을 적용합니다.
-*   **Pixel Shader (`PSDepthWriteShader`)**:
-    *   `SV_Target` (Red Channel)과 `SV_Depth`에 깊이 값을 기록합니다.
-    *   `output.fzPosition = input.position.z;`
-
-<details open>
-<summary>VSLighting & PSDepthWriteShader</summary>
+<details>
+<summary>VSLighting & PSDepthWriteShader (HLSL)</summary>
 
 ```hlsl
 VS_LIGHTING_OUTPUT VSLighting(VS_LIGHTING_INPUT input)
@@ -114,61 +93,61 @@ PS_DEPTH_OUTPUT PSDepthWriteShader(VS_LIGHTING_OUTPUT input)
 ```
 </details>
 
-## 2. Shadow Application (Lighting Pass)
+### 1.3 Dynamic Shadow for Skinned Meshes
+**Role**: 캐릭터와 같은 스킨 메쉬 객체가 움직일 때, 그림자도 이에 맞춰 동적으로 생성되어야 합니다.
+이를 위해 Depth Map 생성 단계(`VSLighting`)에서 Bone Animation 변환을 수행하여 현재 프레임의 정확한 정점 위치를 깊이 버퍼에 기록합니다.
 
-### 2.1 Vertex Shader (`Shaders.hlsl`)
-*   씬 렌더링 시(`VSStandard` 등), 월드 좌표(`positionW`)를 각 조명의 텍스처 공간(Shadow Map UV)으로 변환합니다.
-
-<details open>
-<summary>Click to view code: VSStandard (Shadow Loop)</summary>
-
-```hlsl
-	for (int i = 0; i < MAX_LIGHTS; i++)
-	{
-		if (gcbToLightSpaces[i].f4Position.w != 0.0f)
-			output.uvs[i] = mul(positionW, gcbToLightSpaces[i].mtxToTexture);
-	}
-```
-</details>
-
-### 2.2 Pixel Shader Lighting (`Light.hlsl`)
-*   **PCF (Percentage Closer Filtering)**: 부드러운 그림자를 위해 3x3 PCF 필터링을 사용합니다.
-*   **`Compute3x3ShadowFactor`**:
-    *   현재 픽셀의 깊이(`fDepth`)와 Shadow Map의 깊이 값을 비교합니다.
-    *   `SampleCmpLevelZero`를 사용하여 하드웨어 비교 샘플링을 수행합니다.
-    *   주변 9개 샘플(3x3)을 평균내어 `fShadowFactor`(그림자 계수 0.0~1.0)를 반환합니다.
-
-<details open>
-<summary>Click to view code: Compute3x3ShadowFactor</summary>
+<details>
+<summary>Dynamic Shadow Logic in VSLighting</summary>
 
 ```hlsl
-float Compute3x3ShadowFactor(float2 uv, float fDepth, uint nIndex)
+if (gbBoneShader)
 {
-	float fPercentLit = gtxtDepthTextures[nIndex].SampleCmpLevelZero(gssComparisonPCFShadow, uv, fDepth).r;
-	fPercentLit += gtxtDepthTextures[nIndex].SampleCmpLevelZero(gssComparisonPCFShadow, uv + float2(-DELTA_X, 0.0f), fDepth).r;
-	fPercentLit += gtxtDepthTextures[nIndex].SampleCmpLevelZero(gssComparisonPCFShadow, uv + float2(+DELTA_X, 0.0f), fDepth).r;
-	fPercentLit += gtxtDepthTextures[nIndex].SampleCmpLevelZero(gssComparisonPCFShadow, uv + float2(0.0f, -DELTA_Y), fDepth).r;
-	fPercentLit += gtxtDepthTextures[nIndex].SampleCmpLevelZero(gssComparisonPCFShadow, uv + float2(0.0f, +DELTA_Y), fDepth).r;
-    // ... (More samples) ...
-	fPercentLit += gtxtDepthTextures[nIndex].SampleCmpLevelZero(gssComparisonPCFShadow, uv + float2(+DELTA_X, +DELTA_Y), fDepth).r;
-
-	return(fPercentLit / 9.0f);
+	float4x4 mtxVertexToBoneWorld = (float4x4) 0.0f;
+	for (int i = 0; i < MAX_VERTEX_INFLUENCES; i++)
+	{
+		// 정점 가중치를 고려하여 Bone 변환 행렬 계산
+		mtxVertexToBoneWorld += input.weights[i] * mul(gpmtxBoneOffsets[input.indices[i]], gpmtxBoneTransforms[input.indices[i]]);
+	}
+	
+	// 애니메이션이 적용된 월드 좌표 계산
+	float4 positionW = mul(float4(input.position, 1.0f), mtxVertexToBoneWorld);
+	output.positionW = positionW.xyz;
+	
+	// Light Space로 투영하여 깊이 값 계산
+	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
 }
 ```
 </details>
 
-### 2.3 Lighting Calculation (`Lighting` Function)
-*   계산된 `fShadowFactor`를 Diffuse 및 Specular 조명 계산에 곱해줍니다.
-*   그림자가 있는 곳(`fShadowFactor < 1.0`)은 빛의 영향이 줄어들어 어둡게 렌더링됩니다.
+### 1.2 Shadow Application (Lighting Pass)
+**Role**: 렌더링 시 Shadow Map을 PCF 필터링으로 샘플링하여 그림자를 적용합니다.
 
-<details open>
-<summary>Click to view code: Lighting Function</summary>
+<details>
+<summary>Shadow Calculation (HLSL)</summary>
 
 ```hlsl
+// VSStandard (Transform Logic)
+for (int i = 0; i < MAX_LIGHTS; i++)
+{
+	if (gcbToLightSpaces[i].f4Position.w != 0.0f)
+		output.uvs[i] = mul(positionW, gcbToLightSpaces[i].mtxToTexture);
+}
+
+// Compute3x3ShadowFactor (PCF Logic)
+float Compute3x3ShadowFactor(float2 uv, float fDepth, uint nIndex)
+{
+	float fPercentLit = gtxtDepthTextures[nIndex].SampleCmpLevelZero(gssComparisonPCFShadow, uv, fDepth).r;
+	// ... (Sampling neighbors) ...
+	fPercentLit += gtxtDepthTextures[nIndex].SampleCmpLevelZero(gssComparisonPCFShadow, uv + float2(+DELTA_X, +DELTA_Y), fDepth).r;
+
+	return(fPercentLit / 9.0f);
+}
+
+// Lighting Function
 float4 Lighting(float3 vPosition, float3 vNormal, bool bShadow, float4 uvs[MAX_LIGHTS])
 {
     // ...
-	[unroll]
 	for (int i = 0; i < MAX_LIGHTS; i++)
 	{
 		if (gLights[i].m_bEnable)
@@ -179,21 +158,8 @@ float4 Lighting(float3 vPosition, float3 vNormal, bool bShadow, float4 uvs[MAX_L
 #else
 			if (bShadow) fShadowFactor = gtxtDepthTextures[i].SampleCmpLevelZero(gssComparisonPCFShadow, uvs[i].xy / uvs[i].ww, uvs[i].z / uvs[i].w).r;
 #endif
-
-			if (gLights[i].m_nType == DIRECTIONAL_LIGHT)
-			{
-				cColor += DirectionalLight(i, vNormal, vToCamera) * fShadowFactor;
-			}
-			else if (gLights[i].m_nType == POINT_LIGHT)
-			{
-				cColor += PointLight(i, vPosition, vNormal, vToCamera) * fShadowFactor;
-			}
-			else if (gLights[i].m_nType == SPOT_LIGHT)
-			{
-				cColor += SpotLight(i, vPosition, vNormal, vToCamera) * fShadowFactor;
-			}
-
-			cColor += gLights[i].m_cAmbient * gMaterial.m_cAmbient;
+            // Apply Shadow Factor
+			// ...
 		}
 	}
     // ...
@@ -202,17 +168,6 @@ float4 Lighting(float3 vPosition, float3 vNormal, bool bShadow, float4 uvs[MAX_L
 ```
 </details>
 
-## 3. Key Structures & Variables
+---
 
-### C++
-*   **`TOLIGHTSPACES`**: 조명 공간 변환 행렬을 담는 Constant Buffer 구조체.
-*   **`MAX_DEPTH_TEXTURES`**: 생성할 그림자 맵의 최대 개수.
 
-### HLSL
-*   **`gcbToLightSpaces`**: 조명 별 텍스처 변환 행렬 배열.
-*   **`gtxtDepthTextures`**: 그림자 맵 텍스처 배열.
-*   **`gssComparisonPCFShadow`**: 그림자 비교를 위한 Sampler State (Comparison Filter).
-
-## 4. Notes
-*   **Spot Light Projection**: 현재 Spot Light도 Orthographic 투영을 사용하도록 설정되어 있습니다. 원근감 있는 그림자를 원한다면 Perspective 투영으로 변경이 필요할 수 있습니다.
-*   **PCF Quality**: 3x3 필터링을 사용하고 있어 비교적 부드러운 그림자를 생성하지만, 성능 비용이 발생합니다.
