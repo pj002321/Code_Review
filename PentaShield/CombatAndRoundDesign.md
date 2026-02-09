@@ -118,7 +118,7 @@ public void StartHitStun()
 
 ### 4.2 레벨업 보상 (Level Up Rewards)
 플레이어가 경험치를 획득하여 레벨업하면 추가적인 보상이 주어집니다.
-*   **체력 증가**: [PlayerReward.cs](Contents/Player/PlayerReward.cs)에서 레벨업 시 플레이어의 최대 체력을 즉시 증가시킵니다.
+*   **체력 증가**: [PlayerReward.cs](Contents/Player/PlayerReward.cs)에서 레벨업 시 플레이어 및 수정체의 최대 체력을 즉시 증가시킵니다.
 *   **랜덤 아이템 박스**: [LevelUpRewardItem.cs](Contents/Items/LevelUpRewardItem.cs)를 통해 맵의 지정된 위치 중 한 곳에 **랜덤 아이템 박스**가 생성됩니다. 플레이어는 이를 획득하여 글로벌 아이템(God, Fever 등)이나 추가 자원을 얻을 수 있습니다.
 
 <details>
