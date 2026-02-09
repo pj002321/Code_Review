@@ -9,13 +9,13 @@
 로그인 프레임워크는 **프레젠테이션 계층(UI)**과 **비즈니스 로직/네트워크 계층**을 엄격하게 분리하여 구현되었습니다.
 
 ### 1. UI와 네트워크 로직의 완전한 분리 (Decoupled UI & Network Logic)
-- **UI ([LogInScreen.cs](Screen/LogIn/LogInScreen.cs))**: 사용자의 입력(Input), 애니메이션, 이벤트에 따른 시각적 피드백만을 담당합니다.
-- **Service ([LoginService.cs](Network/Auth/LoginService.cs))**: 실제 데이터 처리, 패킷 생성, 서버 통신을 담당합니다.
+- **UI ([LogInScreen.cs](../Screen/LogIn/LogInScreen.cs))**: 사용자의 입력(Input), 애니메이션, 이벤트에 따른 시각적 피드백만을 담당합니다.
+- **Service ([LoginService.cs](../Network/Auth/LoginService.cs))**: 실제 데이터 처리, 패킷 생성, 서버 통신을 담당합니다.
 - **이점**: UI는 서버의 패킷 구조(`LoginReq`, `CreateAccountReq` 등)를 전혀 몰라도 됩니다. 따라서 네트워크 로직을 수정하지 않고도 UI 디자인을 전면 개편(Reskin)하거나 교체하는 것이 매우 용이합니다.
 
 ### 2. 중앙 집중식 에러 및 알림 관리 (Centralized Error & Notification Handling)
 - 서버의 응답은 주로 `ErrorType` (Enum) 형태로 수신됩니다.
-- **[NotiConst.cs](Common/NotiConst.cs)** 클래스가 이 에러 코드를 사용자에게 보여줄 '메시지'와 '색상(Color)'으로 변환하는 단일 소스(Source of Truth) 역할을 합니다.
+- **[NotiConst.cs](../Common/NotiConst.cs)** 클래스가 이 에러 코드를 사용자에게 보여줄 '메시지'와 '색상(Color)'으로 변환하는 단일 소스(Source of Truth) 역할을 합니다.
 - **이점**: 모든 알림 메시지가 한 곳에서 관리되므로, 문구 수정이나 다국어 처리(Localization) 시 `NotiConst.cs` 파일 하나만 수정하면 프로젝트 전체에 반영됩니다.
 
 ### 3. 클라이언트 1차 검증 (Client-Side Validation)
@@ -64,7 +64,7 @@ sequenceDiagram
 
 ## 📂 핵심 컴포넌트 구현 (Key Components Implementation)
 
-### 1. UI 계층: [LogInScreen.cs](Screen/LogIn/LogInScreen.cs)
+### 1. UI 계층: [LogInScreen.cs](../Screen/LogIn/LogInScreen.cs)
 뷰 컨트롤러 역할을 하며, 사용자의 입력을 받고 서비스의 이벤트를 구독합니다.
 
 *   **이벤트 기반 응답 처리:** 네트워크 콜백을 직접 받지 않고, `LoginService`의 C# Event를 구독하여 처리합니다.
@@ -101,7 +101,7 @@ private void HandleNotiLoginResponse(ErrorType t)
 
 </details>
 
-### 2. 서비스 계층: [LoginService.cs](Network/Auth/LoginService.cs)
+### 2. 서비스 계층: [LoginService.cs](../Network/Auth/LoginService.cs)
 비즈니스 로직을 캡슐화한 클래스입니다.
 
 *   **파사드 패턴 (Facade Pattern):** UI에는 `ReqAuthVaild(id, pw)`와 같이 단순한 메서드만 노출하고, 내부적으로 `LoginReq` 패킷 생성 및 프로토콜 처리를 수행합니다.
@@ -129,7 +129,7 @@ private static async UniTaskVoid NotifyLoginResponseAsync(ErrorType t)
 
 </details>
 
-### 3. 상수 및 메시지 관리: [NotiConst.cs](Common/NotiConst.cs)
+### 3. 상수 및 메시지 관리: [NotiConst.cs](../Common/NotiConst.cs)
 서버의 에러 코드나 내부 타입을 사용자 친화적인 메시지로 변환하는 정적 헬퍼 클래스입니다.
 
 <details>
@@ -150,9 +150,9 @@ public static string GetAuthNotiMsg(AUTH_NOTI_TYPE type)
 
 </details>
 
-### 4. 네트워크 매니저: [NetworkManager.cs](Network/NetworkManager.cs) & [GameSession.cs](Network/Session/GameSession.cs)
-*   **[GameSession.cs](Network/Session/GameSession.cs):** 게임의 라이프사이클을 관리하는 싱글톤입니다. `LoginService`를 초기화하고 보유하여, 게임 내 어디서든 로그인 서비스에 접근할 수 있게 합니다.
-*   **[NetworkManager.cs](Network/NetworkManager.cs):** `ConcurrentDictionary`를 사용해 로그인 서버, 게임 서버 등 다중 연결을 스레드 안전(Thread-Safe)하게 관리합니다.
+### 4. 네트워크 매니저: [NetworkManager.cs](../Network/NetworkManager.cs) & [GameSession.cs](../Network/Session/GameSession.cs)
+*   **[GameSession.cs](../Network/Session/GameSession.cs):** 게임의 라이프사이클을 관리하는 싱글톤입니다. `LoginService`를 초기화하고 보유하여, 게임 내 어디서든 로그인 서비스에 접근할 수 있게 합니다.
+*   **[NetworkManager.cs](../Network/NetworkManager.cs):** `ConcurrentDictionary`를 사용해 로그인 서버, 게임 서버 등 다중 연결을 스레드 안전(Thread-Safe)하게 관리합니다.
 
 ---
 

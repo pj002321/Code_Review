@@ -9,14 +9,16 @@
 
 ### 1.1 데이터 구조
 *   **Editor 데이터 (`UINodeGraph`)**: `ScriptableObject`로 저장되며, 노드(`UINode`)와 연결(`UINodeConnection`) 정보를 포함합니다. 이 데이터는 에디터에서 그래프를 그리고 편집하는 데 사용됩니다.
+    *   관련 파일: [UINodeGraph.cs](../Tool/UINodeGraph/UINodeGraph.cs)
 *   **Runtime 데이터 (`UIGraphRuntimeData`)**: 게임 실행 시 사용되는 최적화된 데이터입니다. 노드 간의 복잡한 참조 대신, 실행 순서대로 정렬된 `UIGraphExecutionStep` 리스트를 가집니다.
+    *   관련 파일: [UIGraphRuntimeData.cs](../Tool/UINodeGraph/UIGraphRuntimeData.cs)
 *   **식별자 시스템 (`UIGraphTarget`)**: 씬 내의 GameObject를 그래프에서 참조하기 위해 고유 ID(`TargetId`)를 부여하는 컴포넌트입니다. Bake 및 런타임 실행 시 이 ID를 통해 대상 오브젝트를 찾습니다.
 
 ### 1.2 Bake 프로세스 (최적화)
 `UINodeGraph.Bake()` 메서드는 그래프 데이터를 런타임용으로 변환합니다.
 
 ```csharp
-// UINodeGraph.cs
+// [UINodeGraph.cs](../Tool/UINodeGraph/UINodeGraph.cs)
 public void Bake()
 {
 #if UNITY_EDITOR
@@ -51,7 +53,7 @@ public void Bake()
 *   **`UIGraphRuntimeData.cs`**: 실행 단계(`UIGraphExecutionStep`) 리스트를 담고 있으며, 직렬화 가능한 딕셔너리(`SerializableDictionary`)를 통해 다양한 타입의 파라미터를 저장합니다.
 
 ```csharp
-// UIGraphRuntimeData.cs
+// [UIGraphRuntimeData.cs](../Tool/UINodeGraph/UIGraphRuntimeData.cs)
 [Serializable]
 public class UIGraphExecutionStep
 {
@@ -67,9 +69,10 @@ public class UIGraphExecutionStep
 
 ### 2.2 Runtime Components
 *   **`UIGraphBakedEvent`**: Bake 시점에 버튼에 자동 추가됩니다. 버튼 클릭 시 `UIManager`를 통해 그래프 실행을 트리거합니다.
+    *   관련 파일: [UIGraphBakedEvent.cs](../Tool/UINodeGraph/UIGraphBakedEvent.cs)
 
 ```csharp
-// UIGraphBakedEvent.cs
+// [UIGraphBakedEvent.cs](../Tool/UINodeGraph/UIGraphBakedEvent.cs)
 public void OnButtonClick()
 {
     // ... 유효성 검사 생략
@@ -83,6 +86,7 @@ public void OnButtonClick()
 
 ### 2.3 Editor Tool
 *   **`UINodeGraphEditor.cs`**: 커스텀 EditorWindow로 구현된 그래프 편집기입니다.
+    *   관련 파일: [UINodeGraphEditor.cs](../Tool/UINodeGraph/Editor/UINodeGraphEditor.cs)
     *   **노드 시각화**: `DrawNodeWindow`를 통해 각 노드 타입에 맞는 Custom Inspector UI를 제공합니다.
     *   **연결 관리**: 베지에 곡선(Bezier Curve)을 사용하여 노드 간 연결을 시각화하고 관리합니다.
     *   **데이터 복원**: 씬이 열리거나 플레이 모드가 변경될 때, `GUID`를 기반으로 씬 내의 실제 GameObject 참조를 자동으로 복원(`RestoreNodeReferences`)하는 기능을 포함합니다.

@@ -65,7 +65,7 @@ graph TD
 > **핵심 역할**: 애니메이션 이름(`clipName`)과 타이밍(`FxTiming`) 매핑.
 
 ```csharp
-// [HuntVerse/Tool/FXPreset/Editor/CharacterFxPreset.cs]
+// [CharacterFxPreset.cs](../Tool/FXPreset/Editor/CharacterFxPreset.cs)
 
 // 캐릭터 하나가 가지는 전체 VFX/SFX 설정
 public class CharacterFxPreset : ScriptableObject
@@ -102,7 +102,7 @@ public class FxTiming
 > - **비주얼 타임라인**: 슬라이더로 정확한 타이밍 조절
 
 ```csharp
-// [HuntVerse/Tool/FXPreset/Editor/HuntPresetEditor.cs]
+// [HuntPresetEditor.cs](../Tool/FXPreset/Editor/HuntPresetEditor.cs)
 
 // 왼쪽 패널에 애니메이션 미리보기 렌더링 (2D/3D 자동 감지)
 private void DrawLeftPanelPreview()
@@ -236,7 +236,7 @@ private void AddEventAtCurrentTime()
 > **핵심 기능**: 비동기 로드(UniTask), 오브젝트 풀링(ObjectPool), 부모/위치 설정.
 
 ```csharp
-// [HuntVerse/Service/Manage/VfxManager.cs]
+// [VfxManager.cs](../Service/Manage/VfxManager.cs)
 
 // 이펙트 재생 요청 처리
 public async UniTask<VfxHandle> PlayOneShot(string key, Vector3 pos, Quaternion rot, Transform parent = null)

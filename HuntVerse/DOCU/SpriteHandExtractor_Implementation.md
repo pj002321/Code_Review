@@ -1,6 +1,7 @@
 # SpriteHandExtractor 구현 및 동작 방식 정리
 
 `SpriteHandExtractor`는 스프라이트 애니메이션 프레임마다 손의 위치, 회전, 정렬 순서(Sorting Order)를 지정하고 데이터를 추출하는 유니티 에디터 도구입니다. 
+관련 스크립트: [SpriteHandExtractor.cs](../Tool/SpriteHandExtractor.cs) 
 이 도구는 캐릭터가 무기를 쥐거나 특정 지점에서 이펙트를 발생시켜야 할 때, 정확한 위치 데이터를 제공하기 위해 사용됩니다.
 
 ---
