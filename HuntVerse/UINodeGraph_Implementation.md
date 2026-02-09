@@ -14,6 +14,28 @@
 
 ### 1.2 Bake 프로세스 (최적화)
 `UINodeGraph.Bake()` 메서드는 그래프 데이터를 런타임용으로 변환합니다.
+
+```csharp
+// UINodeGraph.cs
+public void Bake()
+{
+#if UNITY_EDITOR
+    // 1. 초기화 및 기존 데이터 정리
+    bakedData = new UIGraphRuntimeData();
+    CleanupOldBakedEvents();
+    
+    // 2. 노드 베이킹 (실행 순서 계산 및 데이터 추출)
+    BakeNodes();
+    
+    // 3. 이벤트 컴포넌트 자동 부착 (Button, Keyboard 등)
+    BakeButtonEvents();
+    
+    EditorUtility.SetDirty(this);
+    AssetDatabase.SaveAssets();
+#endif
+}
+```
+
 1.  **위상 정렬 (Topological Sort)**: 노드 간의 연결 관계를 분석하여 실행 순서를 계산합니다.
 2.  **이벤트 베이킹 (Event Baking)**:
     *   **Button**: `ButtonClickNode`와 연결된 버튼에는 `UIGraphBakedEvent` 컴포넌트를 자동으로 추가하고 `onClick` 이벤트에 등록합니다.
@@ -27,6 +49,21 @@
 ### 2.1 Core
 *   **`UINodeGraph.cs`**: 그래프 데이터의 컨테이너이자 Bake 로직의 진입점입니다. Editor 관련 코드(`SetDirty`, `AssetDatabase`)를 포함하여 데이터 저장 및 갱신을 관리합니다.
 *   **`UIGraphRuntimeData.cs`**: 실행 단계(`UIGraphExecutionStep`) 리스트를 담고 있으며, 직렬화 가능한 딕셔너리(`SerializableDictionary`)를 통해 다양한 타입의 파라미터를 저장합니다.
+
+```csharp
+// UIGraphRuntimeData.cs
+[Serializable]
+public class UIGraphExecutionStep
+{
+    public UINodeType nodeType;
+    public string nodeGuid;
+    // 런타임에 필요한 파라미터만 저장 (최적화)
+    public string[] gameObjectIds; // TargetId (Bake된 고유 ID)
+    public SerializableDictionary<string, string> stringParams;
+    public SerializableDictionary<string, int> intParams;
+    public SerializableDictionary<string, float> floatParams;
+}
+```
 
 ### 2.2 Runtime Components
 *   **`UIGraphBakedEvent`**: Bake 시점에 버튼에 자동 추가됩니다. 버튼 클릭 시 `UIManager`를 통해 그래프 실행을 트리거합니다.
