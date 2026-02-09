@@ -24,7 +24,7 @@ HuntVerse의 그림자 렌더링 시스템은 **Shadow Mapping** 기법을 사�
         *   이때 셰이더는 `VSlighting`과 `PSDepthWriteShader`를 사용합니다.
 
 <details open>
-<summary>Click to view code: CDepthRenderShader::PrepareShadowMap</summary>
+<summary> CDepthRenderShader::PrepareShadowMap</summary>
 
 ```cpp
 void CDepthRenderShader::PrepareShadowMap(ID3D12GraphicsCommandList* pd3dCommandList)
@@ -80,7 +80,7 @@ void CDepthRenderShader::PrepareShadowMap(ID3D12GraphicsCommandList* pd3dCommand
     *   `output.fzPosition = input.position.z;`
 
 <details open>
-<summary>Click to view code: VSLighting & PSDepthWriteShader</summary>
+<summary>VSLighting & PSDepthWriteShader</summary>
 
 ```hlsl
 VS_LIGHTING_OUTPUT VSLighting(VS_LIGHTING_INPUT input)
