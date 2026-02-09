@@ -70,7 +70,7 @@ private async UniTask<bool> CheckCatalogVersion()
 *   Firebase Storage에서 파일 목록을 가져와 **버전 해시**를 생성합니다.
     *   `GenerateVersionHash`: 파일 이름들을 정렬하여 조합한 문자열의 MD5 해시를 생성.
 *   **캐시 초기화**:
-    *   로컬에 저장된 이전 버전(`version.txt`)과 비교하여 다를 경우, **로컬 캐시를 전체 삭제**합니다 (`ClearLocalCache`).
+    *   로컬에 저장된 이전 버전과 비교하여 다를 경우, **로컬 캐시를 전체 삭제**합니다 (`ClearLocalCache`).
     *   이는 파일 간 의존성 문제나 구 버전 파일 잔재로 인한 오류를 방지하기 위함입니다.
 
 ```csharp
