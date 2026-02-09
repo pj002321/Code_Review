@@ -72,33 +72,7 @@ private async UniTask CompleteRound()
 
 ## 3. 적 스폰 및 상태 관리 (Enemy Spawn & State)
 
-### 3.1 적 스폰 시스템 ([EnemySpawnBase.cs](Contents/Enemy/EnemySpawnBase.cs))
-`SpawnInfo` 데이터에 기반하여 적을 생성합니다.
-*   **SpawnOperation**: [어떤 적]을, [몇 마리], [몇 초 간격]으로 소환할지 정의합니다.
-*   **동적 스폰 포인트**: 맵의 바닥(`Renderer.bounds`)을 격자(Grid)로 나누어 안전한 스폰 위치를 계산합니다.
-
-<details>
-<summary>📄 EnemySpawnBase.cs 코드 확인하기</summary>
-
-```csharp
-// EnemySpawnBase.cs
-private List<Vector3> GenerateSpawnPoints(GameObject floorObject, int gridX, int gridZ, float margin)
-{
-    // ... (Renderer bounds check) ...
-    // 바운드 내에서 gridX * gridZ 만큼의 포인트를 계산하여 반환
-    for (int z = 0; z < gridZ; z++) {
-        for (int x = 0; x < gridX; x++) {
-            // ... (Calculate safe position) ...
-            points.Add(point);
-        }
-    }
-    return points;
-}
-```
-
-</details>
-
-### 3.2 적 상태 관리 (State Management)
+### 적 상태 관리 (State Management)
 적은 다양한 상태를 통해 피격 반응과 군중 제어(CC)를 구현합니다.
 *   **피격 (Hit Stun)**: 피격 시 일시적으로 이동을 멈춤 (`StartHitStun`).
 *   **석화 (Petrify)**: 행동 정지 + 외형 변화 (Y축 스케일 조정).
