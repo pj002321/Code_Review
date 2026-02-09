@@ -17,10 +17,10 @@
 
 | 클래스 | 경로 | 역할 |
 | :--- | :--- | :--- |
-| **BootLoader** | `Boot/BootLoader.cs` | 게임 진입점. 앱 버전 체크, 점검 모드 확인, 다운로드 시작 등을 관리합니다. |
-| **AddressableDownloadManager** | `Addressables/AddressableDownloadManager.cs` | 파일 다운로드, 로컬 캐시 관리, 무결성 검증(MD5)을 수행합니다. |
-| **AddressableSystemManager** | `Addressables/AddressableSystemManager.cs` | Addressable 시스템 초기화, 카탈로그 업데이트, 경로 리맵핑을 담당합니다. |
-| **AddressableFirebaseUploader** | `Addressables/AddressabpeFirebaseUploader.cs` | (Editor) 빌드된 에셋을 Firebase Storage로 업로드하는 툴입니다. |
+| **BootLoader** | [Boot/BootLoader.cs](Boot/BootLoader.cs) | 게임 진입점. 앱 버전 체크, 점검 모드 확인, 다운로드 시작 등을 관리합니다. |
+| **AddressableDownloadManager** | [Addressables/AddressableDownloadManager.cs](Addressables/AddressableDownloadManager.cs) | 파일 다운로드, 로컬 캐시 관리, 무결성 검증(MD5)을 수행합니다. |
+| **AddressableSystemManager** | [Addressables/AddressableSystemManager.cs](Addressables/AddressableSystemManager.cs) | Addressable 시스템 초기화, 카탈로그 업데이트, 경로 리맵핑을 담당합니다. |
+| **AddressableFirebaseUploader** | [Addressables/AddressabpeFirebaseUploader.cs](Addressables/AddressabpeFirebaseUploader.cs) | (Editor) 빌드된 에셋을 Firebase Storage로 업로드하는 툴입니다. |
 
 ---
 
