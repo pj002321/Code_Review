@@ -4,18 +4,18 @@
 
 ---
 
-## 🏗️ 설계 방향 (Design Philosophy)
+## 설계 방향 (Design Philosophy)
 
 로그인 프레임워크는 **프레젠테이션 계층(UI)**과 **비즈니스 로직/네트워크 계층**을 엄격하게 분리하여 구현되었습니다.
 
 ### 1. UI와 네트워크 로직의 완전한 분리 (Decoupled UI & Network Logic)
 - **UI ([LogInScreen.cs](../Screen/LogIn/LogInScreen.cs))**: 사용자의 입력(Input), 애니메이션, 이벤트에 따른 시각적 피드백만을 담당합니다.
 - **Service ([LoginService.cs](../Network/Auth/LoginService.cs))**: 실제 데이터 처리, 패킷 생성, 서버 통신을 담당합니다.
-- **이점**: UI는 서버의 패킷 구조(`LoginReq`, `CreateAccountReq` 등)를 전혀 몰라도 됩니다. 따라서 네트워크 로직을 수정하지 않고도 UI 디자인을 전면 개편(Reskin)하거나 교체하는 것이 매우 용이합니다.
+- **이점**: UI는 서버의 패킷 구조(`LoginReq`, `CreateAccountReq` 등)를 전혀 몰라도 됩니다. 따라서 네트워크 로직을 수정하지 않고도 UI 디자인을 전면 개편하거나 교체하는 것이 매우 용이합니다.
 
 ### 2. 중앙 집중식 에러 및 알림 관리 (Centralized Error & Notification Handling)
 - 서버의 응답은 주로 `ErrorType` (Enum) 형태로 수신됩니다.
-- **[NotiConst.cs](../Common/NotiConst.cs)** 클래스가 이 에러 코드를 사용자에게 보여줄 '메시지'와 '색상(Color)'으로 변환하는 단일 소스(Source of Truth) 역할을 합니다.
+- **[NotiConst.cs](../Common/NotiConst.cs)** 클래스가 이 에러 코드를 사용자에게 보여줄 '메시지'와 '색상(Color)'으로 변환하는 단일 소스역할을 합니다.
 - **이점**: 모든 알림 메시지가 한 곳에서 관리되므로, 문구 수정이나 다국어 처리(Localization) 시 `NotiConst.cs` 파일 하나만 수정하면 프로젝트 전체에 반영됩니다.
 
 ### 3. 클라이언트 1차 검증 (Client-Side Validation)
@@ -24,7 +24,7 @@
 
 ---
 
-## 🔄 아키텍처 흐름 (Architecture Flow)
+## 아키텍처 흐름 (Architecture Flow)
 
 데이터의 흐름은 UI가 Service를 호출하되, Service는 UI에 대해 알지 못하고 오직 **Event**를 통해서만 응답을 전달하는 단방향 의존성을 가집니다.
 
@@ -62,7 +62,7 @@ sequenceDiagram
 
 ---
 
-## 📂 핵심 컴포넌트 구현 (Key Components Implementation)
+## 핵심 컴포넌트 구현 (Key Components Implementation)
 
 ### 1. UI 계층: [LogInScreen.cs](../Screen/LogIn/LogInScreen.cs)
 뷰 컨트롤러 역할을 하며, 사용자의 입력을 받고 서비스의 이벤트를 구독합니다.
