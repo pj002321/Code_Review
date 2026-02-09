@@ -12,9 +12,9 @@
 
 1.  **유지보수의 어려움**: 
     *   이벤트가 `.anim` 파일 내부에 숨겨져 있어, 어떤 클립에 어떤 효과가 있는지 한눈에 파악하기 어렵습니다.
-    *   함수 이름 변경 시 모든 애니메이션 클립을 찾아다니며 문자열(String)을 수정해야 합니다.
+    *   함수 이름 변경 시 모든 애니메이션 클립을 찾아다니며 문자열(String)을 수정해야 할 일이 생깁니다.
 2.  **작업 효율 저하 (No Preview)**:
-    *   이펙트가 정확한 타이밍(프레임)에 나오는지 확인하려면 매번 게임을 실행해야 합니다.
+    *   이펙트가 정확한 타이밍(프레임)에 나오는지 확인하려면 매번 디렉토리에서 해당 캐릭터의 클립을 찾아야합니다.
     *   기획자나 아티스트가 이펙트를 수정하려면 프로그래머의 도움이 필요하거나 복잡한 과정을 거쳐야 합니다.
 3.  **하드코딩 및 결합도 증가**:
     *   `Player.cs` 같은 코드 안에 `SpawnVfx("Slash")` 등을 하드코딩하면 로직과 연출이 강하게 결합되어 관리가 힘듭니다.
@@ -29,8 +29,8 @@
     *   모든 연출 데이터가 `CharacterFxPreset` (ScriptableObject)에 모여 있어 관리가 용이합니다.
     *   애니메이션 클립 원본을 수정하지 않으므로 버전 관리(SVN/Git) 충돌이 줄어듭니다.
 3.  **타입 안전성 및 자동화**:
-    *   문자열 입력 대신 `VfxType` (Enum)을 사용하여 오타 실수를 방지합니다.
-    *   `VfxManager`가 내부적으로 오브젝트 풀링(Object Pooling)을 자동 처리하여 최적화 신경을 덜 써도 됩니다.
+    *   문자열 입력 대신 `VfxType` (Enum)등 Vfx,Sfx 의 타입을 드랍다운으로 선택하여 오타 실수를 방지합니다.
+    *   `VfxManager`가 내부적으로 오브젝트 풀링(Object Pooling)을 자동 처리합니다.
 
 ---
 
@@ -186,26 +186,9 @@ private void AddEventAtCurrentTime()
 
 ---
 
-## 4. 런타임 컨트롤러 비교
+## 4. 런타임 컨트롤러
 
-프로젝트에는 두 가지 VFX 트리거 방식이 공존합니다.
-
-### A. FxOrchestrator (레거시 방식)
-
-**개념**: Animation Event → `AnimationVfxEventReceiver` → `FxOrchestrator.OnAnimEvent()` → VFX 재생
-
-**장점**:
-- 기존 애니메이션 클립 호환
-- Animation Event가 이미 설정된 경우 바로 사용 가능
-
-**단점**:
-- Animation Event를 클립에 직접 추가해야 함
-- eventId 하드코딩 필요
-- 미리보기 불가능
-
-**사용 대상**: 기존 캐릭터, 레거시 콘텐츠
-
-### B. ActorFxController (권장 방식)
+### ActorFxController
 
 **개념**: `CharacterFxPreset` 데이터 → `ActorFxController.Update()` → 타이밍 자동 감지 → VFX 재생
 
@@ -217,7 +200,7 @@ private void AddEventAtCurrentTime()
 **단점**:
 - 새로운 시스템이라 기존 콘텐츠 마이그레이션 필요
 
-**사용 대상**: **모든 새로운 캐릭터 (권장)**
+**사용 대상**: **모든 새로운 캐릭터**
 
 ### 런타임 동작 플로우 (ActorFxController)
 
@@ -231,7 +214,7 @@ private void AddEventAtCurrentTime()
 ---
 
 ## 5. 런타임 매니저: `VfxManager.cs`
-실제로 게임 내에서 이펙트를 쏘는 역할을 합니다. 데이터(`CharacterFxPreset`)를 직접 알지 못하며, **"어떤 키(Key)의 이펙트를 어디(Position)에 틀어라"** 라는 명령만 수행합니다.
+실제로 게임 내에서 이펙트를 출력하는 역할을 합니다. 데이터(`CharacterFxPreset`)를 직접 알지 못하며, **"어떤 키(Key)의 이펙트를 어디(Position)에 틀어라"** 라는 명령만 수행합니다.
 
 > **핵심 기능**: 비동기 로드(UniTask), 오브젝트 풀링(ObjectPool), 부모/위치 설정.
 
