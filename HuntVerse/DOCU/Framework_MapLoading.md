@@ -4,19 +4,18 @@
 
 ---
 
-## 🏗️ 설계 방향 (Design Philosophy)
+## 설계 방향 (Design Philosophy)
 
 맵 로딩 시스템은 **단일 코어(Single Core)** 구조를 기반으로, 환경(Environment)만 교체하는 방식을 채택했습니다.
 
 ### 1. Core 씬 중심의 Additive 로딩 (Core-Based Additive Loading)
-- **Persistent Core**: [InGameCoreScreen.cs](../Screen/InGameCoreScreen.cs)이 존재하는 **Core 씬**은 게임 내내 유지됩니다. 공통 HUD, 전역 매니저(Network, Sound), 플레이어 캐릭터 등은 언로드되지 않습니다.
+- **Persistent Core**: [InGameCoreScreen.cs](../Screen/InGameCoreScreen.cs)이 존재하는 **Core 씬**은 게임 내내 유지됩니다. 공통 HUD, 전역 매니저(Network, Sound) 등은 언로드되지 않습니다.
 - **Dynamic Content**: 마을(`Village`)이나 필드 던전(`FieldDungeon`) 등의 구체적인 맵 데이터는 **Additive** 모드로 로드되며, 이동 시 이전 맵만 언로드하고 새 맵을 로드합니다.
-- **이점**: 씬 전환 시 재로딩해야 할 리소스를 최소화하여 로딩 속도를 비약적으로 향상시키고, BGM이나 UI 상태가 끊기지 않습니다.
 
-### 2. 맵 ID 기반의 데이터 관리 (ID-Based Management)
+### 2. 맵 ID 기반의 데이터 관리
 - 단순한 씬 이름이 아닌, 기획 데이터(CSV)와 연동된 **Map ID**(`uint`)를 통해 씬을 관리합니다.
 - **[WorldMapManager.cs](../Service/Manage/WorldMapManager.cs)**는 `Map ID`를 `AssetBundle Key` 또는 `Scene Name`으로 변환(`GetEnvKey`)하여 적절한 환경을 로드합니다.
-- **이점**: 동일한 '숲' 테마의 씬이라도 ID에 따라 다른 몬스터 배치나 환경 설정을 가질 수 있어 확장성이 뛰어납니다.
+- **이점**: 동일한 테마의 씬이라도 ID에 따라 다른 몬스터 배치나 환경 설정을 가질 수 있다는 확장성을 고려했습니다.
 
 ### 3. 클라이언트 예측 이동 및 위치 보정 (Transition & Positioning)
 - 포털 이동 시, 클라이언트는 **[FieldTransitionInfo](../Contents/Map/FieldPortal.cs)**를 통해 "어디서 왔는지(진입 방향)"와 "어디로 갈지(목표 맵)"를 미리 저장합니다.
@@ -26,7 +25,7 @@
 
 ## 🔄 아키텍처 흐름 (Architecture Flow)
 
-[WorldMapManager.cs](../Service/Manage/WorldMapManager.cs)가 씬 관리의 중추 역할을 하며, [GameSession.cs](../Network/Session/GameSession.cs)과 연동하여 플레이어의 스폰 및 이동을 제어합니다.
+[WorldMapManager.cs](../Service/Manage/WorldMapManager.cs)가 씬 관리의 중추 역할을 하며, [GameSession.cs](../Network/Session/GameSession.cs)과 연동하여 로컬 및 원격 플레이어의 스폰 및 이동을 제어합니다.
 
 ```mermaid
 sequenceDiagram
