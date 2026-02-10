@@ -1,6 +1,6 @@
 # MissingAssetHunter - Unity 에디터 도구
 
-## 📋 개요
+## 개요
 
 MissingAssetHunter는 Unity 프로젝트에서 누락되거나 손상된 에셋을 찾아내는 에디터 확장 도구입니다. 씬과 프리팹을 분석하여 Missing Script, Missing Material, Broken Prefab 등의 문제를 탐지하고 상세한 분석 리포트를 제공합니다.
 
@@ -8,7 +8,7 @@ MissingAssetHunter는 Unity 프로젝트에서 누락되거나 손상된 에셋�
 
 ---
 
-## 📁 코드 구조
+## 코드 구조
 
 ### 1. [BaseFinderBehaviour.cs](BaseFinderBehaviour.cs) (728 lines)
 > **핵심 역할**: Finder 클래스들의 부모 클래스로, 공통 UI 렌더링(스타일, 버튼, 레이아웃) 및 검색 기본 로직을 제공합니다.
@@ -294,7 +294,7 @@ SceneError
     └── 추가 정보 (인덱스 등)
 ```
 
-## 🔍 사용 시나리오
+## 사용 시나리오
 
 ### 1. 프로젝트 정리 전 체크
 ```
