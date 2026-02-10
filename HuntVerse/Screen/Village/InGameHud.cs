@@ -18,6 +18,11 @@ namespace Hunt
         public HudCharStatPanel CharStatPanel => charStatPanel;
         public HudCharInventoryPanel CharInventoryPanel => charInventoryPanel;
         public HudStagePanel StagePanel => stagePanel;
+
+        [Header("Quick Slot")]
+        [SerializeField] private UserQuickSlot quickSlotController;
+        public UserQuickSlot QuickSlot => quickSlotController;
+
         protected override bool DontDestroy => true;
 
         protected override void Awake()
@@ -41,12 +46,13 @@ namespace Hunt
                 userPanel = GetComponentInChildren<HudUserPanel>(true).ValidInit("UserPanel");
                 charInventoryPanel = GetComponentInChildren<HudCharInventoryPanel>(true).ValidInit("CharInventoryPanel");
                 stagePanel = GetComponentInChildren<HudStagePanel>(true).ValidInit("StagePanel");
+                quickSlotController = GetComponentInChildren<UserQuickSlot>(true).ValidInit("QuickSlot");
 
-                this.DLog("Panel ÃÊ±âÈ­ ¿Ï·á");
+                this.DLog("Panel ï¿½Ê±ï¿½È­ ï¿½Ï·ï¿½");
             }
             catch(Exception e)
             {
-                this.DError($"Panel ÃÊ±âÈ­ ½ÇÆÐ : {e.Message}");
+                this.DError($"Panel ï¿½Ê±ï¿½È­ ï¿½ï¿½ï¿½ï¿½ : {e.Message}");
             }
 
         }

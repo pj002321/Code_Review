@@ -23,74 +23,61 @@ namespace Hunt
         [HideInInspector] public float cooldownRemain;
     }
 
-    [System.Serializable]
-    public class SlotUI
+    public class UserQuickSlot : MonoBehaviour
     {
-        public Image iconImage;
-        public TextMeshProUGUI countText = null;
-        public Slider useOverlaySlider;
-    }
+        [Header("Data")]
 
-    public class UserQuickSlot : MonoBehaviourSingleton<UserQuickSlot>
-    {
-        [Header("UI - Skill Slots")]
-        [SerializeField] public List<SlotUI> skillQuickList;
+        [SerializeField] private List<QuickSlotEntry> skillSlots;      
+        [SerializeField] private List<QuickSlotEntry> itemSlots;
 
-        [Header("UI - Item Slots")]
-        [SerializeField] public List<SlotUI> itemQuickList;
-
-        [Header("Data - Skill Slots")]
-        [SerializeField] private List<QuickSlotEntry> skillSlots = new List<QuickSlotEntry>();
-
-        [Header("Data - Item Slots")]
-        [SerializeField] private List<QuickSlotEntry> itemSlots = new List<QuickSlotEntry>();
-
-        protected override bool DontDestroy => false;
-
-        protected override void Awake()
-        {
-            base.Awake();
-            Init();
-        }
+        [Header("View Connection")]
+        [SerializeField] private QuickSlotView view;
 
         private void Update()
         {
-            HandleHotKey();
+            HandleInput();
             UpdateCooldowns(Time.deltaTime);
         }
-        private void Init()
-        {
-            foreach (var slot in skillQuickList)
-            {
-                slot.useOverlaySlider.value = 0f;
-            }
-            foreach (var slot in itemQuickList)
-            {
-                slot.useOverlaySlider.value = 0f;
-            }
-        }
-        private void HandleHotKey()
+        
+        private void HandleInput()
         {
             // 아이템 슬롯 (1~4)
-            if (Input.GetKeyDown(KeyCode.Alpha1)) UseItemSlot(0);
-            if (Input.GetKeyDown(KeyCode.Alpha2)) UseItemSlot(1);
-            if (Input.GetKeyDown(KeyCode.Alpha3)) UseItemSlot(2);
-            if (Input.GetKeyDown(KeyCode.Alpha4)) UseItemSlot(3);
+            if (Input.GetKeyDown(KeyCode.Alpha1)) UseQuickItem(0);
+            if (Input.GetKeyDown(KeyCode.Alpha2)) UseQuickItem(1);
+            if (Input.GetKeyDown(KeyCode.Alpha3)) UseQuickItem(2);
+            if (Input.GetKeyDown(KeyCode.Alpha4)) UseQuickItem(3);
 
             // 스킬 슬롯 (QERT)
-            if (Input.GetKeyDown(KeyCode.Q)) UseSkillSlot(0);
-            if (Input.GetKeyDown(KeyCode.E)) UseSkillSlot(1);
-            if (Input.GetKeyDown(KeyCode.R)) UseSkillSlot(2);
-            if (Input.GetKeyDown(KeyCode.T)) UseSkillSlot(3);
+            if (Input.GetKeyDown(KeyCode.Q)) UseQuickSkill(0);
+            if (Input.GetKeyDown(KeyCode.E)) UseQuickSkill(1);
+            if (Input.GetKeyDown(KeyCode.R)) UseQuickSkill(2);
+            if (Input.GetKeyDown(KeyCode.T)) UseQuickSkill(3);
         }
+        private void Start()
+        {
+            
+            RefreshAllSlots();
+        }
+        public void RefreshAllSlots() 
+        {
+            if (view == null) return;
+   
+            for (int i = 0; i < skillSlots.Count; i++)
+            {
+                view.UpdateSkillSlot(i, skillSlots[i]);
+            }
 
-        private void UseSkillSlot(int index)
+            for (int i = 0; i < itemSlots.Count; i++)
+            {
+                view.UpdateItemSlot(i, itemSlots[i]);
+            }
+        }
+        private void UseQuickSkill(int index)
         {
             if (index < 0 || index >= skillSlots.Count) return;
 
             var slot = skillSlots[index];
-            if (slot.type != QuickSlotType.Skill) return;
-            if (slot.cooldownRemain > 0f) return;
+            if (slot.type != QuickSlotType.Skill || slot.cooldownRemain > 0f) return;
 
             $"스킬 퀵슬롯 사용 {index}".DLog();
 
@@ -101,16 +88,15 @@ namespace Hunt
                 slot.cooldownRemain = slot.cooldownMax;
             }
 
-            RefreshSkillSlotUI(index);
+            view?.UpdateSkillSlot(index, skillSlots[index]);
         }
 
-        private void UseItemSlot(int index)
+        private void UseQuickItem(int index)
         {
             if (index < 0 || index >= itemSlots.Count) return;
 
             var slot = itemSlots[index];
-            if (slot.type != QuickSlotType.Item || slot.count <= 0) return;
-            if (slot.cooldownRemain > 0f) return;
+            if (slot.type != QuickSlotType.Item || slot.count <= 0 || slot.cooldownRemain > 0f) return;
 
             $"아이템 퀵슬롯 사용 {index}".DLog();
 
@@ -125,13 +111,9 @@ namespace Hunt
             if (slot.count <= 0)
             {
                 slot.type = QuickSlotType.None;
-                itemQuickList[index].iconImage.sprite = null;
-                ClearItemSlotUI(index);
             }
-            else
-            {
-                RefreshItemSlotUI(index);
-            }
+            
+            view?.UpdateItemSlot(index, slot);
         }
 
         /// <summary>
@@ -147,7 +129,8 @@ namespace Hunt
                 {
                     slot.cooldownRemain -= deltaTime;
                     if (slot.cooldownRemain < 0f) slot.cooldownRemain = 0f;
-                    RefreshSkillSlotUI(i);
+                    
+                    view?.UpdateSkillSlot(i, slot);
                 }
             }
 
@@ -158,117 +141,21 @@ namespace Hunt
                 {
                     slot.cooldownRemain -= deltaTime;
                     if (slot.cooldownRemain < 0f) slot.cooldownRemain = 0f;
-                    RefreshItemSlotUI(i);
+
+                    view?.UpdateItemSlot(i, slot);
                 }
             }
         }
 
-        /// <summary>
-        /// 아이템 모두 소진 시 슬롯 UI 비움.
-        /// </summary>
-        private void ClearItemSlotUI(int index)
+        public void SetSkillSlotIcon(int index, Sprite icon)
         {
-            if (index < 0 || index >= itemQuickList.Count) return;
-
-            var ui = itemQuickList[index];
-
-            if (ui.iconImage != null)
-            {
-                ui.iconImage.sprite = null;
-                ui.iconImage.enabled = false;
-            }
-
-            if (ui.countText != null)
-            {
-                ui.countText.text = string.Empty;
-            }
-
-            if (ui.useOverlaySlider != null)
-            {
-                ui.useOverlaySlider.value = 0f;
-            }
+            if (view != null) view.SetSkillIcon(index, icon);
         }
-
-        /// <summary>
-        /// 아이템 슬롯 UI 갱신 (수량 텍스트, 쿨타임 오버레이 포함)
-        /// </summary>
-        private void RefreshItemSlotUI(int index)
+        public void SetItemSlotIcon(int index, Sprite icon)
         {
-            if (index < 0 || index >= itemQuickList.Count) return;
-
-            var ui = itemQuickList[index];
-            var slot = itemSlots[index];
-
-            if (ui.iconImage != null)
-            {
-                if (slot.type == QuickSlotType.None)
-                {
-                    ui.iconImage.sprite = null;
-                    ui.iconImage.enabled = false;
-                }
-                else
-                {
-                    ui.iconImage.enabled = true;
-                }
-            }
-
-            if (ui.countText != null)
-            {
-                if (slot.type == QuickSlotType.Item && slot.count > 1)
-                {
-                    ui.countText.text = slot.count.ToString();
-                }
-                else
-                {
-                    ui.countText.text = string.Empty;
-                }
-            }
-
-            // 쿨타임 오버레이 (0~1)
-            if (ui.useOverlaySlider != null)
-            {
-                if (slot.cooldownMax > 0f)
-                {
-                    ui.useOverlaySlider.value = slot.cooldownRemain / slot.cooldownMax;
-                }
-                else
-                {
-                    ui.useOverlaySlider.value = 0f;
-                }
-            }
+            if (view != null) view.SetItemIcon(index, icon);
         }
 
-        /// <summary>
-        /// 스킬 슬롯 UI 갱신 (아이콘, 쿨타임 오버레이)
-        /// </summary>
-        private void RefreshSkillSlotUI(int index)
-        {
-            if (index < 0 || index >= skillQuickList.Count) return;
 
-            var ui = skillQuickList[index];
-            var slot = skillSlots[index];
-
-            if (ui.countText != null)
-            {
-                ui.countText.text = string.Empty;
-            }
-
-            if (ui.useOverlaySlider != null)
-            {
-                if (slot.cooldownMax > 0f)
-                {
-                    ui.useOverlaySlider.value = slot.cooldownRemain / slot.cooldownMax;
-                }
-                else
-                {
-                    ui.useOverlaySlider.value = 0f;
-                }
-            }
-        }
-
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
-        }
     }
 }
